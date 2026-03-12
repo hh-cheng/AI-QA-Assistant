@@ -1,0 +1,24 @@
+{
+  "name": "@Intelligent-QA-Assistant/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@Intelligent-QA-Assistant/db": "workspace:*",
+    "@Intelligent-QA-Assistant/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@Intelligent-QA-Assistant/config": "workspace:*",
+    "typescript": "^5"
+  }
+}

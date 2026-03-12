@@ -1,0 +1,46 @@
+{
+  "name": "Intelligent-QA-Assistant",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:web": "turbo -F web dev",
+    "dev:server": "turbo -F server dev",
+    "db:push": "turbo -F @Intelligent-QA-Assistant/db db:push",
+    "db:studio": "turbo -F @Intelligent-QA-Assistant/db db:studio",
+    "db:generate": "turbo -F @Intelligent-QA-Assistant/db db:generate",
+    "db:migrate": "turbo -F @Intelligent-QA-Assistant/db db:migrate",
+    "db:start": "turbo -F @Intelligent-QA-Assistant/db db:start",
+    "db:watch": "turbo -F @Intelligent-QA-Assistant/db db:watch",
+    "db:stop": "turbo -F @Intelligent-QA-Assistant/db db:stop",
+    "db:down": "turbo -F @Intelligent-QA-Assistant/db db:down",
+    "check": "biome check --write .",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@Intelligent-QA-Assistant/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@Intelligent-QA-Assistant/config": "workspace:*",
+    "@biomejs/biome": "^2.2.0",
+    "@types/node": "^22.13.14",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "turbo": "^2.8.12",
+    "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
+      "biome check --write ."
+    ]
+  },
+  "packageManager": "pnpm@10.28.0"
+}

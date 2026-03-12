@@ -1,0 +1,3 @@
+{
+  "extends": "@Intelligent-QA-Assistant/config/tsconfig.base.json"
+}

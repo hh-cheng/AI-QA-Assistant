@@ -1,0 +1,27 @@
+{
+  "name": "@Intelligent-QA-Assistant/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@Intelligent-QA-Assistant/auth": "workspace:*",
+    "@Intelligent-QA-Assistant/db": "workspace:*",
+    "@Intelligent-QA-Assistant/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@Intelligent-QA-Assistant/config": "workspace:*",
+    "hono": "catalog:",
+    "typescript": "^5"
+  }
+}
