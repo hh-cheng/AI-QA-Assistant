@@ -128,3 +128,81 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  .qa-theme,
+  .qa-shell {
+    --background: oklch(0.15 0.02 255);
+    --foreground: oklch(0.97 0.01 240);
+    --card: oklch(0.22 0.02 255);
+    --card-foreground: oklch(0.97 0.01 240);
+    --popover: oklch(0.2 0.02 255);
+    --popover-foreground: oklch(0.97 0.01 240);
+    --primary: oklch(0.8 0.14 210);
+    --primary-foreground: oklch(0.18 0.02 255);
+    --secondary: oklch(0.3 0.02 250);
+    --secondary-foreground: oklch(0.97 0.01 240);
+    --muted: oklch(0.26 0.02 250);
+    --muted-foreground: oklch(0.76 0.02 245);
+    --accent: oklch(0.74 0.15 300);
+    --accent-foreground: oklch(0.97 0.01 240);
+    --border: oklch(0.3 0.02 250);
+    --input: oklch(0.22 0.02 250);
+    --ring: oklch(0.8 0.14 210);
+    --destructive: oklch(0.65 0.2 24);
+    --sidebar: oklch(0.14 0.02 255);
+    --sidebar-foreground: oklch(0.97 0.01 240);
+    --sidebar-primary: oklch(0.8 0.14 210);
+    --sidebar-primary-foreground: oklch(0.18 0.02 255);
+    --sidebar-accent: oklch(0.22 0.02 250);
+    --sidebar-accent-foreground: oklch(0.97 0.01 240);
+    --sidebar-border: oklch(0.3 0.02 250);
+    --sidebar-ring: oklch(0.8 0.14 210);
+    --qa-success: oklch(0.72 0.17 160);
+    --qa-warning: oklch(0.82 0.17 84);
+    --qa-processing: oklch(0.72 0.17 250);
+  }
+
+  .qa-shell {
+    @apply min-h-screen bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 18% 12%, color-mix(in oklab, var(--color-accent) 8%, transparent), transparent 34%),
+      radial-gradient(circle at 82% 82%, color-mix(in oklab, var(--color-primary) 6%, transparent), transparent 28%);
+    background-size: auto, auto;
+  }
+
+  .qa-glass-card {
+    @apply rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl;
+    box-shadow:
+      0 4px 24px -4px color-mix(in oklab, black 72%, transparent),
+      inset 0 1px 0 color-mix(in oklab, white 8%, transparent);
+  }
+
+  .qa-glass-card-hover {
+    @apply rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl transition duration-200;
+    box-shadow:
+      0 4px 24px -4px color-mix(in oklab, black 72%, transparent),
+      inset 0 1px 0 color-mix(in oklab, white 8%, transparent);
+  }
+
+  .qa-glass-card-hover:hover {
+    box-shadow:
+      0 8px 32px -4px color-mix(in oklab, var(--color-primary) 15%, transparent),
+      0 4px 24px -4px color-mix(in oklab, black 72%, transparent),
+      inset 0 1px 0 color-mix(in oklab, white 10%, transparent);
+  }
+
+  .qa-hero-gradient {
+    background:
+      radial-gradient(circle at 50% 20%, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 36%),
+      radial-gradient(circle at 28% 68%, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 28%);
+  }
+
+  .qa-grid {
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--color-muted-foreground) 10%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 20px 20px;
+  }
+}

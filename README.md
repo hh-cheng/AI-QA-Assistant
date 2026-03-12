@@ -48,6 +48,30 @@ pnpm run dev
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
 The API is running at [http://localhost:3000](http://localhost:3000).
 
+## Database Container
+
+The repository only provides a database container. It uses a `pgvector`-enabled PostgreSQL image so vector search extensions can be enabled later.
+
+Start the database:
+
+```bash
+pnpm run db:start
+```
+
+This runs the compose file in [`packages/db/docker-compose.yml`](/Users/heweicheng/Desktop/projects/Intelligent-QA-Assistant/packages/db/docker-compose.yml) and exposes PostgreSQL on `localhost:5432`.
+
+Then apply the schema:
+
+```bash
+pnpm run db:push
+```
+
+Stop the database:
+
+```bash
+pnpm run db:down
+```
+
 ## UI Customization
 
 React web apps in this stack share shadcn/ui primitives through `packages/ui`.

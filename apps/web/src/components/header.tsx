@@ -1,10 +1,23 @@
 'use client'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import { ModeToggle } from './mode-toggle'
 import UserMenu from './user-menu'
 
 export default function Header() {
+  const pathname = usePathname()
+
+  if (
+    pathname === '/' ||
+    pathname === '/dashboard' ||
+    pathname === '/documents' ||
+    pathname === '/chat' ||
+    pathname === '/settings'
+  ) {
+    return null
+  }
+
   const links = [
     { to: '/', label: 'Home' },
     { to: '/dashboard', label: 'Dashboard' },

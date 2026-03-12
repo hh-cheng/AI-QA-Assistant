@@ -1,11 +1,10 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { cache } from 'react'
 
 import { authClient } from '@/lib/auth-client'
 
-import Dashboard from './dashboard'
-
-export default async function DashboardPage() {
+export const verifyQaSession = cache(async () => {
   const session = await authClient.getSession({
     fetchOptions: {
       headers: await headers(),
@@ -14,14 +13,8 @@ export default async function DashboardPage() {
   })
 
   if (!session?.user) {
-    redirect('/login')
+    redirect('/?auth=login')
   }
 
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Welcome {session.user.name}</p>
-      <Dashboard session={session} />
-    </div>
-  )
-}
+  return session
+})

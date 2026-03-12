@@ -12,8 +12,10 @@ import Loader from './loader'
 
 export default function SignInForm({
   onSwitchToSignUp,
+  embedded = false,
 }: {
   onSwitchToSignUp: () => void
+  embedded?: boolean
 }) {
   const router = useRouter()
   const { isPending } = authClient.useSession()
@@ -53,8 +55,16 @@ export default function SignInForm({
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+    <div className={embedded ? 'w-full' : 'mx-auto mt-10 w-full max-w-md p-6'}>
+      <h1
+        className={
+          embedded
+            ? 'mb-6 text-center text-3xl font-bold text-foreground'
+            : 'mb-6 text-center text-3xl font-bold'
+        }
+      >
+        Welcome Back
+      </h1>
 
       <form
         onSubmit={(e) => {
@@ -119,7 +129,7 @@ export default function SignInForm({
           {({ canSubmit, isSubmitting }) => (
             <Button
               type="submit"
-              className="w-full"
+              className="w-full rounded-full"
               disabled={!canSubmit || isSubmitting}
             >
               {isSubmitting ? 'Submitting...' : 'Sign In'}
@@ -132,7 +142,7 @@ export default function SignInForm({
         <Button
           variant="link"
           onClick={onSwitchToSignUp}
-          className="text-indigo-600 hover:text-indigo-800"
+          className="text-primary hover:text-primary/80"
         >
           Need an account? Sign Up
         </Button>
