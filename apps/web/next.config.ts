@@ -1,9 +1,9 @@
-import "@Intelligent-QA-Assistant/env/web";
-import type { NextConfig } from "next";
+import '@Intelligent-QA-Assistant/env/web'
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
-};
+}
 
-export default nextConfig;
+export default nextConfig

@@ -1,12 +1,12 @@
-import { db } from "@Intelligent-QA-Assistant/db";
-import * as schema from "@Intelligent-QA-Assistant/db/schema/auth";
-import { env } from "@Intelligent-QA-Assistant/env/server";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from '@Intelligent-QA-Assistant/db'
+import * as schema from '@Intelligent-QA-Assistant/db/schema/auth'
+import { env } from '@Intelligent-QA-Assistant/env/server'
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "pg",
+    provider: 'pg',
 
     schema: schema,
   }),
@@ -18,10 +18,10 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
+      sameSite: 'none',
       secure: true,
       httpOnly: true,
     },
   },
   plugins: [],
-});
+})

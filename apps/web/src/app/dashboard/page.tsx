@@ -1,9 +1,9 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from '@/lib/auth-client'
 
-import Dashboard from "./dashboard";
+import Dashboard from './dashboard'
 
 export default async function DashboardPage() {
   const session = await authClient.getSession({
@@ -11,10 +11,10 @@ export default async function DashboardPage() {
       headers: await headers(),
       throw: true,
     },
-  });
+  })
 
   if (!session?.user) {
-    redirect("/login");
+    redirect('/login')
   }
 
   return (
@@ -23,5 +23,5 @@ export default async function DashboardPage() {
       <p>Welcome {session.user.name}</p>
       <Dashboard session={session} />
     </div>
-  );
+  )
 }
