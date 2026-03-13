@@ -2,15 +2,14 @@
 
 import { useState } from 'react'
 
+import { Modal } from './modal'
 import SignInForm from '@/components/sign-in-form'
 import SignUpForm from '@/components/sign-up-form'
 
-import { Modal } from './modal'
-
 export default function AuthDialog({
   open,
-  mode = 'signin',
   onClose,
+  mode = 'signin',
 }: {
   open: boolean
   mode?: 'signin' | 'signup'
@@ -22,11 +21,11 @@ export default function AuthDialog({
     <Modal
       open={open}
       onClose={onClose}
+      className="max-w-md p-4"
       title={view === 'signin' ? 'Welcome back' : 'Create your account'}
       description="Use Better Auth to enter the document workspace."
-      className="max-w-md p-0"
     >
-      <div className="qa-theme rounded-[1.75rem] bg-background p-6">
+      <div className="qa-theme rounded-[1.75rem] bg-transparent p-6 pt-2 px-0">
         {view === 'signin' ? (
           <SignInForm embedded onSwitchToSignUp={() => setView('signup')} />
         ) : (

@@ -166,8 +166,16 @@
   .qa-shell {
     @apply min-h-screen bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 18% 12%, color-mix(in oklab, var(--color-accent) 8%, transparent), transparent 34%),
-      radial-gradient(circle at 82% 82%, color-mix(in oklab, var(--color-primary) 6%, transparent), transparent 28%);
+      radial-gradient(
+        circle at 18% 12%,
+        color-mix(in oklab, var(--color-accent) 8%, transparent),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at 82% 82%,
+        color-mix(in oklab, var(--color-primary) 6%, transparent),
+        transparent 28%
+      );
     background-size: auto, auto;
   }
 
@@ -194,8 +202,16 @@
 
   .qa-hero-gradient {
     background:
-      radial-gradient(circle at 50% 20%, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 36%),
-      radial-gradient(circle at 28% 68%, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 28%);
+      radial-gradient(
+        circle at 50% 20%,
+        color-mix(in oklab, var(--color-accent) 18%, transparent),
+        transparent 36%
+      ),
+      radial-gradient(
+        circle at 28% 68%,
+        color-mix(in oklab, var(--color-primary) 12%, transparent),
+        transparent 28%
+      );
   }
 
   .qa-grid {

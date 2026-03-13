@@ -55,20 +55,12 @@ export function Modal({
       />
       <div
         className={cn(
-          'qa-glass-card relative z-10 w-full max-w-xl border-border/80 p-6',
+          'relative z-10 w-full max-w-xl rounded-[2rem] border border-border/80 bg-[linear-gradient(145deg,rgba(3,12,27,0.98),rgba(1,8,20,0.98))] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)]',
           className,
         )}
       >
-        <button
-          type="button"
-          className="absolute right-4 top-4 rounded-full border border-border/70 p-2 text-muted-foreground transition hover:text-foreground"
-          aria-label="Close modal"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-        </button>
         <div className="mb-5 pr-10">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
           {description ? (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           ) : null}

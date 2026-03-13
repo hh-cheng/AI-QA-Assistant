@@ -1,7 +1,8 @@
 'use client'
-
-import { buttonVariants } from '@Intelligent-QA-Assistant/ui/components/button'
-import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
+import Link from 'next/link'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import {
   ArrowRight,
   Brain,
@@ -13,13 +14,12 @@ import {
   Upload,
   Zap,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
-import AuthDialog from './auth-dialog'
 import { Badge } from './badge'
+import AuthDialog from './auth-dialog'
+import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
+import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+import { buttonVariants } from '@Intelligent-QA-Assistant/ui/components/button'
 
 const features = [
   {
@@ -116,8 +116,7 @@ export default function QaLandingPage({
             </div>
           </Link>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
               className={cn(
                 buttonVariants({ variant: 'ghost', size: 'sm' }),
                 'rounded-full',
@@ -125,17 +124,7 @@ export default function QaLandingPage({
               onClick={() => openAuth('signin')}
             >
               Login
-            </button>
-            <button
-              type="button"
-              className={cn(
-                buttonVariants({ size: 'lg' }),
-                'rounded-full px-5',
-              )}
-              onClick={() => openAuth('signup')}
-            >
-              Open workspace
-            </button>
+            </Button>
           </div>
         </nav>
 
@@ -168,8 +157,7 @@ export default function QaLandingPage({
               custom={3}
               className="mt-8 flex flex-wrap gap-3"
             >
-              <button
-                type="button"
+              <Button
                 className={cn(
                   buttonVariants({ size: 'lg' }),
                   'rounded-full px-5',
@@ -178,16 +166,7 @@ export default function QaLandingPage({
               >
                 Start for Free
                 <ArrowRight className="size-4" />
-              </button>
-              <Link
-                href="/documents"
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'lg' }),
-                  'rounded-full bg-background/50 px-5',
-                )}
-              >
-                View Demo
-              </Link>
+              </Button>
             </motion.div>
           </motion.div>
 
@@ -230,130 +209,114 @@ export default function QaLandingPage({
         </section>
       </div>
 
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-10 flex items-end justify-between gap-6">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-              Core capabilities
-            </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-              Everything you need to unlock your documents
-            </h2>
-          </div>
-        </div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-        >
-          {features.map(({ icon: Icon, title, desc }, index) => (
-            <motion.article
-              key={title}
-              variants={fadeUp}
-              custom={index}
-              className="qa-glass-card-hover rounded-[2rem] p-6"
-            >
-              <div className="mb-4 flex size-12 items-center justify-center rounded-3xl bg-primary/12 text-primary">
-                <Icon className="size-5" />
-              </div>
-              <h3 className="text-lg font-medium">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {desc}
-              </p>
-            </motion.article>
-          ))}
-        </motion.div>
-      </section>
+      <div className="relative overflow-hidden bg-background">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/0 to-background" />
 
-      <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="qa-glass-card rounded-[2rem] p-8">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-accent/12 p-3 text-accent">
-              <Settings className="size-5" />
-            </div>
+        <section className="mx-auto max-w-7xl px-6 py-20">
+          <div className="mb-10 flex items-end justify-between gap-6">
             <div>
-              <h2 className="text-2xl font-semibold">
-                How this migrated build works
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                The same product concepts, but with a healthier runtime
-                boundary.
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+                Core capabilities
               </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+                Everything you need to unlock your documents
+              </h2>
             </div>
           </div>
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="mt-8 grid gap-4 md:grid-cols-4"
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
           >
-            {steps.map(([index, label], itemIndex) => (
-              <motion.div
-                key={index}
+            {features.map(({ icon: Icon, title, desc }, index) => (
+              <motion.article
+                key={title}
                 variants={fadeUp}
-                custom={itemIndex}
-                className="rounded-[1.5rem] border border-border/70 bg-secondary/20 p-4"
+                custom={index}
+                className="qa-glass-card-hover rounded-[2rem] p-6"
               >
-                <p className="text-3xl font-semibold text-primary/55">
-                  {index}
+                <div className="mb-4 flex size-12 items-center justify-center rounded-3xl bg-primary/12 text-primary">
+                  <Icon className="size-5" />
+                </div>
+                <h3 className="text-lg font-medium">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {desc}
                 </p>
-                <p className="mt-4 text-sm font-medium">{label}</p>
-              </motion.div>
+              </motion.article>
             ))}
           </motion.div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-4xl px-6 pb-24">
-        <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight">
-          Frequently asked questions
-        </h2>
-        <div className="space-y-3">
-          {faqs.map((faq) => (
-            <details
-              key={faq.q}
-              className="qa-glass-card rounded-[1.5rem] px-5 py-4"
+        <section className="mx-auto max-w-5xl px-6 pb-24">
+          <div className="qa-glass-card rounded-[2rem] p-8">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-accent/12 p-3 text-accent">
+                <Settings className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  How this migrated build works
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  The same product concepts, but with a healthier runtime
+                  boundary.
+                </p>
+              </div>
+            </div>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              className="mt-8 grid gap-4 md:grid-cols-4"
             >
-              <summary className="cursor-pointer list-none text-sm font-medium">
-                {faq.q}
-              </summary>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {faq.a}
-              </p>
-            </details>
-          ))}
-        </div>
-      </section>
+              {steps.map(([index, label], itemIndex) => (
+                <motion.div
+                  key={index}
+                  variants={fadeUp}
+                  custom={itemIndex}
+                  className="rounded-[1.5rem] border border-border/70 bg-secondary/20 p-4"
+                >
+                  <p className="text-3xl font-semibold text-primary/55">
+                    {index}
+                  </p>
+                  <p className="mt-4 text-sm font-medium">{label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
 
-      <footer className="border-t border-border py-8 px-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Brain className="size-4 text-primary" />
-            <span>DocMind AI — Intelligent Document Q&A</span>
+        <section className="mx-auto max-w-4xl px-6 pb-24">
+          <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight">
+            Frequently asked questions
+          </h2>
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <details
+                key={faq.q}
+                className="qa-glass-card rounded-[1.5rem] px-5 py-4"
+              >
+                <summary className="cursor-pointer list-none text-sm font-medium">
+                  {faq.q}
+                </summary>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {faq.a}
+                </p>
+              </details>
+            ))}
           </div>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link
-              href="/dashboard"
-              className="hover:text-foreground transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/documents"
-              className="hover:text-foreground transition-colors"
-            >
-              Documents
-            </Link>
-            <Link
-              href="/chat"
-              className="hover:text-foreground transition-colors"
-            >
-              Chat
-            </Link>
+        </section>
+
+        <footer className="border-t border-border px-6 py-8">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Brain className="size-4 text-primary" />
+              <span>DocMind AI — Intelligent Document Q&A</span>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
 
       <AuthDialog open={authOpen} mode={authMode} onClose={closeAuth} />
     </div>

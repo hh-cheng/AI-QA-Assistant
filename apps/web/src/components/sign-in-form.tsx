@@ -56,15 +56,9 @@ export default function SignInForm({
 
   return (
     <div className={embedded ? 'w-full' : 'mx-auto mt-10 w-full max-w-md p-6'}>
-      <h1
-        className={
-          embedded
-            ? 'mb-6 text-center text-3xl font-bold text-foreground'
-            : 'mb-6 text-center text-3xl font-bold'
-        }
-      >
-        Welcome Back
-      </h1>
+      {embedded ? null : (
+        <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -78,11 +72,14 @@ export default function SignInForm({
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
+                <Label htmlFor={field.name} className="text-white">
+                  Email
+                </Label>
                 <Input
+                  type="email"
                   id={field.name}
                   name={field.name}
-                  type="email"
+                  className="text-white"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
@@ -101,11 +98,14 @@ export default function SignInForm({
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <Label htmlFor={field.name} className="text-white">
+                  Password
+                </Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   type="password"
+                  className="text-white"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
@@ -122,15 +122,14 @@ export default function SignInForm({
 
         <form.Subscribe
           selector={(state) => ({
-            canSubmit: state.canSubmit,
             isSubmitting: state.isSubmitting,
           })}
         >
-          {({ canSubmit, isSubmitting }) => (
+          {({ isSubmitting }) => (
             <Button
               type="submit"
               className="w-full rounded-full"
-              disabled={!canSubmit || isSubmitting}
+              disabled={isSubmitting}
             >
               {isSubmitting ? 'Submitting...' : 'Sign In'}
             </Button>
