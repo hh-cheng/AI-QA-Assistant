@@ -1,6 +1,7 @@
 'use client'
 
-import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRight,
@@ -11,13 +12,46 @@ import {
   Settings,
   Upload,
 } from 'lucide-react'
-import Link from 'next/link'
-
-import { trpc } from '@/utils/trpc'
 
 import { Badge } from './badge'
-import { EmptyState } from './empty-state'
+import { trpc } from '@/utils/trpc'
 import { StatCard } from './stat-card'
+import { EmptyState } from './empty-state'
+import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+
+const quickActions = [
+  {
+    href: '/documents',
+    title: 'Manage documents',
+    description: 'Upload, review, and delete indexed files',
+    icon: <ArrowRight className="size-4 text-muted-foreground" />,
+  },
+  {
+    href: '/chat',
+    title: 'Open chat',
+    description: 'Run a mock document-grounded conversation',
+    icon: <ArrowRight className="size-4 text-muted-foreground" />,
+  },
+  {
+    href: '/settings',
+    title: 'Configure providers',
+    description: 'Adjust default model and retrieval behavior',
+    icon: <Settings className="size-4 text-muted-foreground" />,
+  },
+] as const
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: index * 0.08,
+      duration: 0.45,
+      ease: [0.32, 0.72, 0, 1] as const,
+    },
+  }),
+}
 
 function formatTimeAgo(value: string) {
   const diff = Date.now() - new Date(value).getTime()
@@ -49,8 +83,12 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="qa-glass-card rounded-[2rem] p-8">
+    <motion.div initial="hidden" animate="visible" className="space-y-6">
+      <motion.section
+        variants={fadeUp}
+        custom={0}
+        className="qa-glass-card rounded-[2rem] p-8"
+      >
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
@@ -77,33 +115,45 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Documents"
-          value={overview.data.totalDocuments}
-          icon={<FileText className="size-4" />}
-        />
-        <StatCard
-          label="Ready Documents"
-          value={overview.data.readyDocuments}
-          icon={<Upload className="size-4" />}
-        />
-        <StatCard
-          label="Queries This Week"
-          value={overview.data.queryCountThisWeek}
-          icon={<MessageSquare className="size-4" />}
-        />
-        <StatCard
-          label="Active Model"
-          value={overview.data.activeModel}
-          icon={<Cpu className="size-4" />}
-        />
-      </section>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <motion.div variants={fadeUp} custom={1}>
+          <StatCard
+            label="Documents"
+            value={overview.data.totalDocuments}
+            icon={<FileText className="size-4" />}
+          />
+        </motion.div>
+        <motion.div variants={fadeUp} custom={2}>
+          <StatCard
+            label="Ready Documents"
+            value={overview.data.readyDocuments}
+            icon={<Upload className="size-4" />}
+          />
+        </motion.div>
+        <motion.div variants={fadeUp} custom={3}>
+          <StatCard
+            label="Queries This Week"
+            value={overview.data.queryCountThisWeek}
+            icon={<MessageSquare className="size-4" />}
+          />
+        </motion.div>
+        <motion.div variants={fadeUp} custom={4}>
+          <StatCard
+            label="Active Model"
+            value={overview.data.activeModel}
+            icon={<Cpu className="size-4" />}
+          />
+        </motion.div>
+      </div>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="qa-glass-card rounded-[2rem] p-6">
+        <motion.div
+          variants={fadeUp}
+          custom={5}
+          className="qa-glass-card rounded-[2rem] p-6"
+        >
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Recent documents</h3>
@@ -126,8 +176,13 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
                 </tr>
               </thead>
               <tbody>
-                {overview.data.recentDocuments.map((doc) => (
-                  <tr key={doc.id} className="border-t border-border/60">
+                {overview.data.recentDocuments.map((doc, index) => (
+                  <motion.tr
+                    key={doc.id}
+                    variants={fadeUp}
+                    custom={index + 6}
+                    className="border-t border-border/60"
+                  >
                     <td className="px-4 py-3 font-medium">{doc.name}</td>
                     <td className="px-4 py-3">
                       <Badge variant="outline">{doc.type}</Badge>
@@ -150,63 +205,51 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatTimeAgo(doc.uploadedAt)}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
 
         <div className="space-y-4">
-          <div className="qa-glass-card rounded-[2rem] p-6">
+          <motion.div
+            variants={fadeUp}
+            custom={6}
+            className="qa-glass-card rounded-[2rem] p-6"
+          >
             <h3 className="text-lg font-semibold">Quick actions</h3>
             <div className="mt-4 grid gap-3">
-              <Link
-                href="/documents"
-                className="rounded-[1.5rem] border border-border/70 bg-secondary/25 p-4 transition hover:bg-secondary/40"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Manage documents</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Upload, review, and delete indexed files
-                    </p>
-                  </div>
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </div>
-              </Link>
-              <Link
-                href="/chat"
-                className="rounded-[1.5rem] border border-border/70 bg-secondary/25 p-4 transition hover:bg-secondary/40"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Open chat</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Run a mock document-grounded conversation
-                    </p>
-                  </div>
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </div>
-              </Link>
-              <Link
-                href="/settings"
-                className="rounded-[1.5rem] border border-border/70 bg-secondary/25 p-4 transition hover:bg-secondary/40"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Configure providers</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Adjust default model and retrieval behavior
-                    </p>
-                  </div>
-                  <Settings className="size-4 text-muted-foreground" />
-                </div>
-              </Link>
+              {quickActions.map((action, index) => (
+                <motion.div
+                  key={action.href}
+                  variants={fadeUp}
+                  custom={index + 7}
+                >
+                  <Link
+                    href={action.href}
+                    className="block rounded-[1.5rem] border border-border/70 bg-secondary/25 p-4 transition hover:bg-secondary/40"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{action.title}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {action.description}
+                        </p>
+                      </div>
+                      {action.icon}
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="qa-glass-card rounded-[2rem] p-6">
+          <motion.div
+            variants={fadeUp}
+            custom={10}
+            className="qa-glass-card rounded-[2rem] p-6"
+          >
             <div className="flex items-center gap-3">
               <Clock3 className="size-4 text-primary" />
               <p className="font-medium">Migration status</p>
@@ -216,9 +259,9 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
               the mock responses with database-backed implementations will not
               require a route restructure.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
-    </div>
+    </motion.div>
   )
 }

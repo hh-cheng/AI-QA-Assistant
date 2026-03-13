@@ -1,19 +1,32 @@
 'use client'
 
-import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
-import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
+import { toast } from 'sonner'
+import { motion } from 'framer-motion'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Eye, FileText, Search, Trash2, Upload } from 'lucide-react'
-import { toast } from 'sonner'
-
-import { queryClient, trpc } from '@/utils/trpc'
 
 import { Badge } from './badge'
-import { EmptyState } from './empty-state'
 import { Modal } from './modal'
 import { Sheet } from './sheet'
+import { EmptyState } from './empty-state'
+import { queryClient, trpc } from '@/utils/trpc'
 import { UploadDropzone } from './upload-dropzone'
+import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
+import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: index * 0.08,
+      duration: 0.45,
+      ease: [0.32, 0.72, 0, 1] as const,
+    },
+  }),
+}
 
 function statusVariant(status: string) {
   switch (status) {
@@ -143,8 +156,12 @@ export default function QaDocumentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="qa-glass-card rounded-[2rem] p-6">
+    <motion.div initial="hidden" animate="visible" className="space-y-6">
+      <motion.section
+        variants={fadeUp}
+        custom={0}
+        className="qa-glass-card rounded-[2rem] p-6"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">Documents</h2>
@@ -194,10 +211,14 @@ export default function QaDocumentsPage() {
             <option value="DOCX">DOCX</option>
           </select>
         </div>
-      </section>
+      </motion.section>
 
       {documents.data?.length ? (
-        <section className="qa-glass-card overflow-hidden rounded-[2rem]">
+        <motion.section
+          variants={fadeUp}
+          custom={1}
+          className="qa-glass-card overflow-hidden rounded-[2rem]"
+        >
           <table className="min-w-full text-left text-sm">
             <thead className="bg-secondary/25 text-xs uppercase tracking-[0.18em] text-muted-foreground">
               <tr>
@@ -210,8 +231,13 @@ export default function QaDocumentsPage() {
               </tr>
             </thead>
             <tbody>
-              {documents.data.map((doc) => (
-                <tr key={doc.id} className="border-t border-border/60">
+              {documents.data.map((doc, index) => (
+                <motion.tr
+                  key={doc.id}
+                  variants={fadeUp}
+                  custom={index + 2}
+                  className="border-t border-border/60"
+                >
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -263,27 +289,29 @@ export default function QaDocumentsPage() {
                       </Button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
-        </section>
+        </motion.section>
       ) : (
-        <EmptyState
-          icon={<FileText className="size-8" />}
-          title="No matching documents"
-          description="Adjust your filters or upload a new document to seed the knowledge base."
-          action={
-            <Button
-              type="button"
-              className="rounded-full px-5"
-              onClick={() => setShowUpload(true)}
-            >
-              <Upload className="size-4" />
-              Upload document
-            </Button>
-          }
-        />
+        <motion.div variants={fadeUp} custom={1}>
+          <EmptyState
+            icon={<FileText className="size-8" />}
+            title="No matching documents"
+            description="Adjust your filters or upload a new document to seed the knowledge base."
+            action={
+              <Button
+                type="button"
+                className="rounded-full px-5"
+                onClick={() => setShowUpload(true)}
+              >
+                <Upload className="size-4" />
+                Upload document
+              </Button>
+            }
+          />
+        </motion.div>
       )}
 
       <Modal
@@ -334,6 +362,6 @@ export default function QaDocumentsPage() {
         documentId={selectedId}
         onClose={() => setSelectedId(null)}
       />
-    </div>
+    </motion.div>
   )
 }
