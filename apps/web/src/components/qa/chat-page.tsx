@@ -121,7 +121,7 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
           </div>
         </div>
 
-        <div className="h-[20vh] shrink-0 border-t border-border/60 px-5 py-4">
+        <div className="shrink-0 border-t border-border/60 px-5 py-4">
           <div className="flex h-full min-h-0 flex-col">
             <div className="mb-3 shrink-0 overflow-x-auto">
               <div className="flex min-w-max flex-wrap gap-2 pr-2">

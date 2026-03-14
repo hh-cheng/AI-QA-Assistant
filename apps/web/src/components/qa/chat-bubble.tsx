@@ -31,7 +31,7 @@ export function ChatBubble({
           'qa-glass-card max-w-3xl rounded-3xl px-5 py-4',
           isAssistant
             ? 'border-border/70 bg-card/70'
-            : 'border-primary/20 bg-primary/12 text-primary-foreground',
+            : 'border-primary/20 bg-primary/12 text-white',
         )}
       >
         <div className="mb-3 flex items-center gap-2">
