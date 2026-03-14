@@ -1,6 +1,9 @@
 'use client'
 
-import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
+import Link from 'next/link'
+import type { ReactNode } from 'react'
+import { motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
 import {
   Brain,
   FileText,
@@ -9,14 +12,10 @@ import {
   Settings,
   User,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import type { ReactNode } from 'react'
-
-import UserMenu from '@/components/user-menu'
 
 import { NavLink } from './nav-link'
+import UserMenu from '@/components/user-menu'
+import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
 
 const routeTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -80,17 +79,9 @@ export default function QaAppShell({ children }: { children: ReactNode }) {
               pathname === '/chat' ? 'pb-0' : '',
             )}
           >
-            <div className="shrink-0">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  {routeTitles[pathname] ?? 'Workspace'}
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Migrated from the original docusage-ai SPA with mock-backed
-                  frontend and backend boundaries.
-                </p>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground mb-4 shrink-0">
+              {routeTitles[pathname] ?? 'Workspace'}
+            </h1>
             <div
               className={cn('min-h-0', pathname === '/chat' ? 'flex-1' : '')}
             >

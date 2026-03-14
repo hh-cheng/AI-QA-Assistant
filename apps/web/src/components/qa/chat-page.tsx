@@ -147,8 +147,13 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
   >('standard')
   const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([])
   const [isSending, setIsSending] = useState(false)
+  const [suggestionOverflow, setSuggestionOverflow] = useState({
+    left: false,
+    right: false,
+  })
   const abortRef = useRef<AbortController | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
 
   const conversationQueryOptions = trpc.qa.chat.getConversation.queryOptions({
     id: conversationId,
@@ -181,6 +186,34 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = suggestionsRef.current
+    if (!container) {
+      return
+    }
+
+    const updateSuggestionOverflow = () => {
+      const maxScrollLeft = container.scrollWidth - container.clientWidth
+      setSuggestionOverflow({
+        left: container.scrollLeft > 4,
+        right: maxScrollLeft - container.scrollLeft > 4,
+      })
+    }
+
+    updateSuggestionOverflow()
+    container.addEventListener('scroll', updateSuggestionOverflow, {
+      passive: true,
+    })
+
+    const resizeObserver = new ResizeObserver(updateSuggestionOverflow)
+    resizeObserver.observe(container)
+
+    return () => {
+      container.removeEventListener('scroll', updateSuggestionOverflow)
+      resizeObserver.disconnect()
     }
   }, [])
 
@@ -406,7 +439,7 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div className="qa-scrollbar-subtle min-h-0 flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-4">
             {displayMessages.length === 0 ? (
               <EmptyState
@@ -425,19 +458,36 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
 
         <div className="shrink-0 border-t border-border/60 px-5 py-4">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="mb-3 shrink-0 overflow-x-auto">
-              <div className="flex min-w-max flex-wrap gap-2 pr-2">
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    className="rounded-full border border-border/70 bg-secondary/20 px-3 py-1.5 text-xs transition hover:bg-secondary/40"
-                    onClick={() => setInputValue(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+            <div className="relative mb-3 shrink-0">
+              <div
+                ref={suggestionsRef}
+                className="scrollbar-hide overflow-x-auto"
+              >
+                <div className="flex min-w-max flex-nowrap gap-2 pr-2">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className="rounded-full border border-border/70 bg-secondary/20 px-3 py-1.5 text-xs whitespace-nowrap transition hover:bg-secondary/40"
+                      onClick={() => setInputValue(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-card/95 to-transparent transition-opacity',
+                  suggestionOverflow.left ? 'opacity-100' : 'opacity-0',
+                )}
+              />
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-card/95 to-transparent transition-opacity',
+                  suggestionOverflow.right ? 'opacity-100' : 'opacity-0',
+                )}
+              />
             </div>
 
             <div className="flex min-h-0 flex-1 items-end gap-3">
@@ -510,7 +560,7 @@ export default function QaChatPage() {
             New chat
           </Button>
         </div>
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+        <div className="qa-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
           {conversations.data?.map((conversation) => (
             <button
               key={conversation.id}

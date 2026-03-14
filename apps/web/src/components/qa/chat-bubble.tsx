@@ -67,7 +67,7 @@ export function ChatBubble({
         </div>
         <div
           className={cn(
-            'max-w-none text-sm leading-7',
+            'qa-markdown max-w-none text-sm leading-7',
             isAssistant ? 'text-foreground' : 'text-white',
             '[&_a]:break-all [&_a]:underline [&_a]:underline-offset-4',
             '[&_blockquote]:border-l-2 [&_blockquote]:border-border/70 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground',
