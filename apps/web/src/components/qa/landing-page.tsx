@@ -210,7 +210,7 @@ export default function QaLandingPage({
       </div>
 
       <div className="relative overflow-hidden bg-background">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/0 to-background" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-background/0 to-background" />
 
         <section className="mx-auto max-w-7xl px-6 py-20">
           <div className="mb-10 flex items-end justify-between gap-6">

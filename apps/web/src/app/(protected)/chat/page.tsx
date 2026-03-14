@@ -1,4 +1,4 @@
-import QaChatPage from '@/components/qa/chat-page'
+import QaChatPage from './components/chat-page'
 import { verifyQaSession } from '@/lib/qa-auth'
 
 export default async function ChatPage() {
