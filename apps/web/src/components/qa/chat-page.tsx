@@ -14,10 +14,10 @@ import { ChatBubble } from './chat-bubble'
 import { EmptyState } from './empty-state'
 
 const suggestions = [
-  'Summarize the project specification',
-  'List action items from the meeting notes',
-  'What model is configured by default?',
-  'Explain the current migration architecture',
+  'Summarize the most recently uploaded document',
+  'List the key points from my indexed files',
+  'What are the most important risks mentioned in the documents?',
+  'Give me a concise answer with citations',
 ]
 
 function ConversationPanel({ conversationId }: { conversationId: string }) {
@@ -29,6 +29,9 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
   const endRef = useRef<HTMLDivElement>(null)
   const conversation = useQuery(
     trpc.qa.chat.getConversation.queryOptions({ id: conversationId }),
+  )
+  const documents = useQuery(
+    trpc.qa.documents.list.queryOptions({ status: 'ready', type: 'all' }),
   )
   const sendMutation = useMutation(trpc.qa.chat.sendMessage.mutationOptions())
 
@@ -73,8 +76,11 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
             className="h-10 rounded-full border border-border/70 bg-secondary/20 px-4 text-sm"
           >
             <option value="all">All documents</option>
-            <option value="project-spec-v2.md">project-spec-v2.md</option>
-            <option value="meeting-notes-q3.txt">meeting-notes-q3.txt</option>
+            {documents.data?.map((document) => (
+              <option key={document.id} value={document.id}>
+                {document.name}
+              </option>
+            ))}
           </select>
           <select
             value={responseLength}
@@ -97,7 +103,7 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
               <EmptyState
                 icon={<MessageSquare className="size-8" />}
                 title="Start the conversation"
-                description="The first message will hit the mock chat.sendMessage mutation."
+                description="The first message will retrieve your indexed chunks and call the selected LLM."
               />
             ) : (
               conversation.data.messages.map((message) => (
@@ -107,7 +113,7 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
             {sendMutation.isPending ? (
               <div className="flex justify-start">
                 <div className="qa-glass-card rounded-3xl px-5 py-4 text-sm text-muted-foreground">
-                  Generating mock answer...
+                  Retrieving context and generating answer...
                 </div>
               </div>
             ) : null}
@@ -234,7 +240,7 @@ export default function QaChatPage() {
         <div className="border-t border-border/60 p-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Settings2 className="size-4" />
-            Mock responses only
+            Answers are grounded in your indexed documents
           </div>
         </div>
       </aside>

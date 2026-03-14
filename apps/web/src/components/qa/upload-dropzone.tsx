@@ -50,8 +50,8 @@ export function UploadDropzone({
       </div>
       <h3 className="text-base font-semibold">Drop files here</h3>
       <p className="mt-2 text-sm text-muted-foreground">
-        Upload TXT, Markdown, PDF, or DOCX files. The API is mocked, but the
-        workflow is wired as a real upload surface.
+        Upload TXT, Markdown, PDF, or DOCX files. Files are stored in object
+        storage and processed into searchable chunks in the background.
       </p>
       <div className="mt-6">
         <Button

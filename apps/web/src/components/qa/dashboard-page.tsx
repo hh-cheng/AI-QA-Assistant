@@ -29,13 +29,13 @@ const quickActions = [
   {
     href: '/chat',
     title: 'Open chat',
-    description: 'Run a mock document-grounded conversation',
+    description: 'Ask grounded questions over your indexed documents',
     icon: <ArrowRight className="size-4 text-muted-foreground" />,
   },
   {
     href: '/settings',
-    title: 'Configure providers',
-    description: 'Adjust default model and retrieval behavior',
+    title: 'Choose your model',
+    description: 'Select which supported LLM answers your questions',
     icon: <Settings className="size-4 text-muted-foreground" />,
   },
 ] as const
@@ -96,8 +96,8 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
               {userName}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              This workspace is now served from the Next.js app while the data
-              flows come from the shared Hono/tRPC layer.
+              Upload files, wait for indexing, and query only the documents you
+              own through the shared Hono/tRPC backend.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -158,7 +158,7 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
             <div>
               <h3 className="text-lg font-semibold">Recent documents</h3>
               <p className="text-sm text-muted-foreground">
-                Documents returned by the mock backend
+                Recently uploaded documents in your workspace
               </p>
             </div>
             <Link href="/documents" className="text-sm text-primary">

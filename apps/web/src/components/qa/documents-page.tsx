@@ -14,6 +14,7 @@ import { queryClient, trpc } from '@/utils/trpc'
 import { UploadDropzone } from './upload-dropzone'
 import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+import { env } from '@Intelligent-QA-Assistant/env/web'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -68,7 +69,7 @@ function DocumentDetailSheetInner({
     <Sheet
       open
       title={detail.data?.name ?? 'Document details'}
-      description="Mock metadata served by the qa router"
+      description="Stored metadata and ingestion state"
       onClose={onClose}
     >
       {detail.isLoading || !detail.data ? (
@@ -99,9 +100,19 @@ function DocumentDetailSheetInner({
             </p>
             <p className="mt-2 rounded-[1.5rem] border border-border/70 bg-secondary/25 p-4 text-sm leading-6">
               {detail.data.summary ??
-                'This document is still processing in the mock pipeline.'}
+                'This document is still being parsed and indexed.'}
             </p>
           </div>
+          {detail.data.errorMessage ? (
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Last error
+              </p>
+              <p className="mt-2 rounded-[1.5rem] border border-destructive/30 bg-destructive/10 p-4 text-sm leading-6 text-destructive">
+                {detail.data.errorMessage}
+              </p>
+            </div>
+          ) : null}
         </div>
       )}
     </Sheet>
@@ -129,19 +140,39 @@ export default function QaDocumentsPage() {
   )
 
   const documents = useQuery(trpc.qa.documents.list.queryOptions(filters))
-  const uploadMutation = useMutation(trpc.qa.documents.upload.mutationOptions())
   const deleteMutation = useMutation(trpc.qa.documents.delete.mutationOptions())
+  const [isUploading, setIsUploading] = useState(false)
 
   const handleUpload = async (files: File[]) => {
-    await uploadMutation.mutateAsync({
-      files: files.map((file) => ({
-        name: file.name,
-        sizeBytes: file.size,
-      })),
-    })
-    toast.success(`${files.length} file(s) queued for mock processing`)
-    setShowUpload(false)
-    await queryClient.invalidateQueries()
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      for (const file of files) {
+        formData.append('files', file)
+      }
+
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_SERVER_URL}/qa/documents/upload`,
+        {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        },
+      )
+
+      const json = (await response.json()) as { message?: string }
+      if (!response.ok) {
+        throw new Error(json.message || 'Upload failed')
+      }
+
+      toast.success(`${files.length} file(s) queued for indexing`)
+      setShowUpload(false)
+      await queryClient.invalidateQueries()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleDelete = async () => {
@@ -166,7 +197,7 @@ export default function QaDocumentsPage() {
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">Documents</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Search and manage documents through the mock qa API.
+              Search and manage only the documents in your own workspace.
             </p>
           </div>
           <Button
@@ -317,11 +348,11 @@ export default function QaDocumentsPage() {
       <Modal
         open={showUpload}
         title="Upload documents"
-        description="Files will be sent to the mock qa.documents.upload mutation."
+        description="Files are uploaded to object storage and indexed asynchronously."
         onClose={() => setShowUpload(false)}
       >
         <UploadDropzone
-          disabled={uploadMutation.isPending}
+          disabled={isUploading}
           onFiles={(files) => {
             void handleUpload(files)
           }}
@@ -331,7 +362,7 @@ export default function QaDocumentsPage() {
       <Modal
         open={Boolean(deleteId)}
         title="Delete document"
-        description="This only updates the in-memory mock dataset."
+        description="This removes the source file and its indexed chunks."
         onClose={() => setDeleteId(null)}
         footer={
           <>
@@ -353,8 +384,8 @@ export default function QaDocumentsPage() {
         }
       >
         <p className="text-sm leading-6 text-muted-foreground">
-          The selected document will disappear from the table immediately after
-          the mock mutation succeeds.
+          The selected document and its retrieval data will be removed after the
+          delete request succeeds.
         </p>
       </Modal>
 

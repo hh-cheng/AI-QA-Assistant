@@ -48,9 +48,9 @@ pnpm run dev
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
 The API is running at [http://localhost:3000](http://localhost:3000).
 
-## Database Container
+## Database And Storage Containers
 
-The repository only provides a database container. It uses a `pgvector`-enabled PostgreSQL image so vector search extensions can be enabled later.
+The repository provides both PostgreSQL and MinIO containers. PostgreSQL uses a `pgvector`-enabled image for vector search, and MinIO stores uploaded source files outside the database.
 
 Start the database:
 
@@ -58,7 +58,11 @@ Start the database:
 pnpm run db:start
 ```
 
-This runs the compose file in [`packages/db/docker-compose.yml`](/Users/heweicheng/Desktop/projects/Intelligent-QA-Assistant/packages/db/docker-compose.yml) and exposes PostgreSQL on `localhost:5432`.
+This runs the compose file in [`packages/db/docker-compose.yml`](/Users/heweicheng/Desktop/projects/Intelligent-QA-Assistant/packages/db/docker-compose.yml) and exposes:
+
+- PostgreSQL on `localhost:5432`
+- MinIO S3 API on `localhost:9000`
+- MinIO console on `localhost:9001`
 
 Then apply the schema:
 
@@ -71,6 +75,8 @@ Stop the database:
 ```bash
 pnpm run db:down
 ```
+
+Use [`apps/server/.env.example`](/Users/heweicheng/Desktop/projects/Intelligent-QA-Assistant/apps/server/.env.example) as the starting point for local server configuration, including object storage and LLM settings.
 
 ## UI Customization
 

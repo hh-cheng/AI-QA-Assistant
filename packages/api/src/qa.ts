@@ -13,6 +13,7 @@ export type DocumentSummary = {
 
 export type DocumentDetail = DocumentSummary & {
   summary: string | null
+  errorMessage?: string | null
 }
 
 export type SourceReference = {
@@ -42,35 +43,19 @@ export type ConversationDetail = ConversationSummary & {
   messages: ChatMessage[]
 }
 
-export type ProviderStatus = 'connected' | 'not_configured' | 'failed'
+export type ProviderStatus = 'connected' | 'not_configured'
 
-export type ProviderConfig = {
-  apiKey?: string
-  baseUrl?: string
-  model?: string
-  temperature?: number
-  maxTokens?: number
-  timeout?: number
-  isDefault?: boolean
-}
-
-export type ProviderItem = {
+export type ModelOption = {
   id: string
-  name: string
-  desc: string
+  provider: string
+  model: string
+  label: string
   status: ProviderStatus
-  config: ProviderConfig
 }
 
-export type QaDefaults = {
-  defaultModel: string
-  contextTurns: string
-  showCitations: boolean
-  defaultLength: 'concise' | 'standard' | 'detailed'
-  chunkStrategy: 'recursive' | 'sentence' | 'paragraph'
-  chunkSize: number
-  embeddingModel: string
-  topK: number
+export type UserModelSettings = {
+  options: ModelOption[]
+  selectedModelId: string
 }
 
 export type QaOverview = {

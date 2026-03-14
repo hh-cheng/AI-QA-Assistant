@@ -16,11 +16,16 @@
     "@Intelligent-QA-Assistant/env": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
+    "drizzle-orm": "^0.45.1",
     "dotenv": "catalog:",
+    "mammoth": "^1.11.0",
+    "minio": "^8.0.6",
+    "pdf-parse": "^1.1.1",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@Intelligent-QA-Assistant/config": "workspace:*",
+    "@types/pdf-parse": "^1.1.5",
     "hono": "catalog:",
     "typescript": "^5"
   }
