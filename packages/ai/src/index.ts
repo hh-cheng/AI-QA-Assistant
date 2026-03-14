@@ -45,6 +45,18 @@ export type OpenAIService = {
     model: string
     rawResponseId?: string
   }>
+  streamGroundedAnswer(input: {
+    model: string
+    systemPrompt: string
+    userPrompt: string
+    signal?: AbortSignal
+    onDelta(chunk: string): void
+  }): Promise<{
+    content: string
+    tokenCount?: number
+    model: string
+    rawResponseId?: string
+  }>
 }
 
 export type DocumentParser = {

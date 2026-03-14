@@ -1,6 +1,6 @@
 import type { OpenAIService } from '../index'
 import { createEmbeddingVectors } from './embeddings'
-import { createGroundedResponse } from './responses'
+import { createGroundedResponse, streamGroundedResponse } from './responses'
 
 export function createOpenAIService(input: {
   apiKey: string
@@ -22,6 +22,16 @@ export function createOpenAIService(input: {
         model: request.model,
         systemPrompt: request.systemPrompt,
         userPrompt: request.userPrompt,
+      })
+    },
+    streamGroundedAnswer(request) {
+      return streamGroundedResponse({
+        apiKey: input.apiKey,
+        model: request.model,
+        systemPrompt: request.systemPrompt,
+        userPrompt: request.userPrompt,
+        signal: request.signal,
+        onDelta: request.onDelta,
       })
     },
   }

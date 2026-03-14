@@ -209,6 +209,11 @@ function toChatMessage(row: typeof qaMessages.$inferSelect): ChatMessage {
   }
 }
 
+export type StreamMessageResult = {
+  conversationId: string
+  message: ChatMessage
+}
+
 async function createNonOpenAIAnswer(input: {
   modelId: string
   question: string
@@ -287,6 +292,17 @@ async function createNonOpenAIAnswer(input: {
 
 async function getSelectedModelIdForUser(userId: string) {
   return userModelPreferencesRepository.getSelectedModelId(userId)
+}
+
+export async function getSelectedChatModel(input: { userId: string }) {
+  const selectedModelId = await getSelectedModelIdForUser(input.userId)
+  const [provider, model] = selectedModelId.split(':')
+
+  return {
+    selectedModelId,
+    provider: provider ?? '',
+    model: model ?? '',
+  }
 }
 
 export async function saveUploadedDocuments(input: {
@@ -546,6 +562,115 @@ export async function sendMessage(input: {
     userId: input.userId,
     conversationId: conversation.id,
   })
+}
+
+export async function streamMessage(input: {
+  userId: string
+  conversationId: string
+  content: string
+  scope: string
+  responseLength: 'concise' | 'standard' | 'detailed'
+  signal?: AbortSignal
+  onStart?: (input: { conversationId: string }) => void
+  onDelta(chunk: string): void
+}): Promise<StreamMessageResult> {
+  const conversation = await getConversationRow({
+    userId: input.userId,
+    conversationId: input.conversationId,
+  })
+
+  if (!conversation) {
+    throw new Error('Conversation not found')
+  }
+
+  const selectedModel = await getSelectedChatModel({ userId: input.userId })
+
+  if (selectedModel.provider !== 'openai') {
+    throw new Error('Streaming is only available for OpenAI models')
+  }
+
+  if (!selectedModel.model) {
+    throw new Error('Selected OpenAI model is not configured')
+  }
+
+  const startedAt = Date.now()
+
+  await conversationRepository.appendUserMessage({
+    conversationId: input.conversationId,
+    userId: input.userId,
+    content: input.content,
+  })
+
+  const [questionEmbedding] = await openAIService.createEmbeddings({
+    texts: [input.content],
+  })
+
+  if (!questionEmbedding) {
+    throw new Error(
+      'OpenAI embedding request failed: response did not contain an embedding.',
+    )
+  }
+
+  const chunks = await chunkRetriever.retrieve({
+    userId: input.userId,
+    questionEmbedding,
+    documentIds: input.scope === 'all' ? undefined : [input.scope],
+  })
+
+  const prompt = buildGroundedAnswerPrompt({
+    question: input.content,
+    responseLength: input.responseLength,
+    chunks,
+  })
+
+  input.onStart?.({
+    conversationId: input.conversationId,
+  })
+
+  const answer = await openAIService.streamGroundedAnswer({
+    model: selectedModel.model,
+    systemPrompt: prompt.systemPrompt,
+    userPrompt: prompt.userPrompt,
+    signal: input.signal,
+    onDelta: input.onDelta,
+  })
+
+  const sources = dedupeSources(chunks)
+  const now = new Date()
+
+  const assistantMessage = await conversationRepository.appendAssistantMessage({
+    conversationId: input.conversationId,
+    userId: input.userId,
+    content: answer.content,
+    model: answer.model,
+    tokenCount: answer.tokenCount,
+    responseTimeMs: Date.now() - startedAt,
+    sources,
+  })
+
+  await conversationRepository.updateConversationAfterAnswer({
+    conversationId: input.conversationId,
+    title:
+      conversation.title === 'New Chat'
+        ? input.content.slice(0, 40)
+        : conversation.title,
+    selectedScope: input.scope === 'all' ? null : [input.scope],
+    selectedModel: answer.model,
+    updatedAt: now,
+  })
+
+  return {
+    conversationId: input.conversationId,
+    message: {
+      id: assistantMessage.messageId,
+      role: 'assistant',
+      content: answer.content,
+      model: answer.model,
+      tokens: answer.tokenCount,
+      responseTime: formatResponseTime(Date.now() - startedAt),
+      sources,
+    },
+  }
 }
 
 export async function getUserModelSettings(

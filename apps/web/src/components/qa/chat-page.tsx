@@ -1,5 +1,6 @@
 'use client'
 
+import { env } from '@Intelligent-QA-Assistant/env/web'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
 import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
 import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
@@ -20,36 +21,344 @@ const suggestions = [
   'Give me a concise answer with citations',
 ]
 
+type MessageRole = 'user' | 'assistant'
+
+type SourceReference = {
+  name: string
+  page?: number
+}
+
+type ChatMessageLike = {
+  id: string
+  role: MessageRole
+  content: string
+  model?: string
+  responseTime?: string
+  tokens?: number
+  sources?: SourceReference[]
+}
+
+type LocalChatMessage = ChatMessageLike & {
+  status?: 'streaming' | 'error'
+}
+
+type StreamCompleteEvent = {
+  conversationId: string
+  message: ChatMessageLike
+}
+
+function createLocalMessage(input: {
+  role: MessageRole
+  content: string
+  status?: 'streaming' | 'error'
+}): LocalChatMessage {
+  return {
+    id: crypto.randomUUID(),
+    role: input.role,
+    content: input.content,
+    status: input.status,
+  }
+}
+
+function parseSseBlock(block: string) {
+  let event = 'message'
+  const data: string[] = []
+
+  for (const line of block.split('\n')) {
+    if (line.startsWith('event:')) {
+      event = line.slice('event:'.length).trim()
+      continue
+    }
+
+    if (line.startsWith('data:')) {
+      data.push(line.slice('data:'.length).trim())
+    }
+  }
+
+  if (data.length === 0) {
+    return null
+  }
+
+  return {
+    event,
+    payload: JSON.parse(data.join('\n')) as unknown,
+  }
+}
+
+async function consumeSseStream(
+  response: Response,
+  input: {
+    onDelta(chunk: string): void
+    onComplete(payload: StreamCompleteEvent): Promise<void> | void
+  },
+) {
+  if (!response.body) {
+    throw new Error('Streaming response did not include a body')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done }).replaceAll('\r\n', '\n')
+
+    let separatorIndex = buffer.indexOf('\n\n')
+    while (separatorIndex !== -1) {
+      const block = buffer.slice(0, separatorIndex).trim()
+      buffer = buffer.slice(separatorIndex + 2)
+
+      if (block) {
+        const parsed = parseSseBlock(block)
+        if (parsed) {
+          switch (parsed.event) {
+            case 'delta':
+              input.onDelta((parsed.payload as { chunk?: string }).chunk ?? '')
+              break
+            case 'complete':
+              await input.onComplete(parsed.payload as StreamCompleteEvent)
+              break
+            case 'error':
+              throw new Error(
+                (parsed.payload as { message?: string }).message ??
+                  'Streaming request failed',
+              )
+            default:
+              break
+          }
+        }
+      }
+
+      separatorIndex = buffer.indexOf('\n\n')
+    }
+
+    if (done) {
+      break
+    }
+  }
+}
+
 function ConversationPanel({ conversationId }: { conversationId: string }) {
   const [inputValue, setInputValue] = useState('')
   const [scope, setScope] = useState('all')
   const [responseLength, setResponseLength] = useState<
     'concise' | 'standard' | 'detailed'
   >('standard')
+  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([])
+  const [isSending, setIsSending] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
-  const conversation = useQuery(
-    trpc.qa.chat.getConversation.queryOptions({ id: conversationId }),
-  )
+
+  const conversationQueryOptions = trpc.qa.chat.getConversation.queryOptions({
+    id: conversationId,
+  })
+  const conversation = useQuery(conversationQueryOptions)
   const documents = useQuery(
     trpc.qa.documents.list.queryOptions({ status: 'ready', type: 'all' }),
   )
+  const models = useQuery(trpc.qa.settings.getModels.queryOptions())
   const sendMutation = useMutation(trpc.qa.chat.sendMessage.mutationOptions())
+  const canStreamResponses =
+    models.data?.selectedModelId.startsWith('openai:') ?? false
+
+  const displayMessages = [
+    ...(conversation.data?.messages ?? []),
+    ...localMessages,
+  ]
+  const lastMessage = displayMessages.at(-1)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [conversation.data?.messages.length, sendMutation.isPending])
+  }, [displayMessages.length, lastMessage?.content, isSending])
 
-  const send = async (content: string) => {
-    const trimmed = content.trim()
-    if (!trimmed) return
-    setInputValue('')
-    await sendMutation.mutateAsync({
+  useEffect(() => {
+    abortRef.current?.abort()
+    setIsSending(false)
+    setLocalMessages([])
+  }, [conversationId])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const updateAssistantMessage = (
+    assistantId: string,
+    updater: (message: LocalChatMessage) => LocalChatMessage,
+  ) => {
+    setLocalMessages((current) =>
+      current.map((message) =>
+        message.id === assistantId ? updater(message) : message,
+      ),
+    )
+  }
+
+  const syncConversationQueries = async () => {
+    await queryClient.invalidateQueries()
+  }
+
+  const finalizeConversation = async (input: {
+    userMessage: LocalChatMessage
+    assistantMessage: ChatMessageLike
+  }) => {
+    queryClient.setQueryData(conversationQueryOptions.queryKey, (current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        updatedAt: new Date().toISOString(),
+        messages: [
+          ...current.messages,
+          {
+            id: input.userMessage.id,
+            role: 'user' as const,
+            content: input.userMessage.content,
+          },
+          input.assistantMessage,
+        ],
+      }
+    })
+
+    setLocalMessages([])
+    await syncConversationQueries()
+  }
+
+  const sendWithFallbackMutation = async (input: {
+    content: string
+    userMessage: LocalChatMessage
+  }) => {
+    const nextConversation = await sendMutation.mutateAsync({
       conversationId,
-      content: trimmed,
+      content: input.content,
       scope,
       responseLength,
     })
-    await queryClient.invalidateQueries()
+
+    queryClient.setQueryData(
+      conversationQueryOptions.queryKey,
+      nextConversation,
+    )
+    setLocalMessages([])
+    await syncConversationQueries()
+  }
+
+  const sendWithStreaming = async (input: {
+    content: string
+    userMessage: LocalChatMessage
+    assistantMessage: LocalChatMessage
+  }) => {
+    const abortController = new AbortController()
+    abortRef.current = abortController
+
+    const response = await fetch(
+      `${env.NEXT_PUBLIC_SERVER_URL}/qa/chat/stream`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversationId,
+          content: input.content,
+          scope,
+          responseLength,
+        }),
+        signal: abortController.signal,
+      },
+    )
+
+    if (response.status === 409) {
+      abortRef.current = null
+      await sendWithFallbackMutation(input)
+      return
+    }
+
+    if (!response.ok) {
+      const json = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
+      throw new Error(json?.message ?? 'Failed to open chat stream')
+    }
+
+    await consumeSseStream(response, {
+      onDelta(chunk) {
+        updateAssistantMessage(input.assistantMessage.id, (message) => ({
+          ...message,
+          content: `${message.content}${chunk}`,
+        }))
+      },
+      async onComplete(payload) {
+        abortRef.current = null
+        await finalizeConversation({
+          userMessage: input.userMessage,
+          assistantMessage: payload.message,
+        })
+      },
+    })
+  }
+
+  const send = async (content: string) => {
+    const trimmed = content.trim()
+    if (!trimmed || isSending) {
+      return
+    }
+
+    const userMessage = createLocalMessage({
+      role: 'user',
+      content: trimmed,
+    })
+    const assistantMessage = createLocalMessage({
+      role: 'assistant',
+      content: '',
+      status: 'streaming',
+    })
+
+    setInputValue('')
+    setLocalMessages([userMessage, assistantMessage])
+    setIsSending(true)
+
+    try {
+      if (canStreamResponses) {
+        await sendWithStreaming({
+          content: trimmed,
+          userMessage,
+          assistantMessage,
+        })
+      } else {
+        await sendWithFallbackMutation({
+          content: trimmed,
+          userMessage,
+        })
+      }
+    } catch (error) {
+      const aborted = abortRef.current?.signal.aborted ?? false
+      abortRef.current = null
+
+      if (!aborted) {
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to send message',
+        )
+      }
+
+      setLocalMessages([
+        {
+          ...assistantMessage,
+          content: aborted
+            ? 'Generation cancelled.'
+            : 'Failed to generate answer.',
+          status: 'error',
+        },
+      ])
+
+      await syncConversationQueries()
+    } finally {
+      setIsSending(false)
+    }
   }
 
   if (conversation.isLoading || !conversation.data) {
@@ -99,24 +408,17 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-4">
-            {conversation.data.messages.length === 0 ? (
+            {displayMessages.length === 0 ? (
               <EmptyState
                 icon={<MessageSquare className="size-8" />}
                 title="Start the conversation"
                 description="The first message will retrieve your indexed chunks and call the selected LLM."
               />
             ) : (
-              conversation.data.messages.map((message) => (
+              displayMessages.map((message) => (
                 <ChatBubble key={message.id} {...message} />
               ))
             )}
-            {sendMutation.isPending ? (
-              <div className="flex justify-start">
-                <div className="qa-glass-card rounded-3xl px-5 py-4 text-sm text-muted-foreground">
-                  Retrieving context and generating answer...
-                </div>
-              </div>
-            ) : null}
             <div ref={endRef} />
           </div>
         </div>
@@ -155,9 +457,9 @@ function ConversationPanel({ conversationId }: { conversationId: string }) {
                 type="button"
                 className="rounded-full px-5"
                 onClick={() => void send(inputValue)}
-                disabled={sendMutation.isPending}
+                disabled={isSending}
               >
-                {sendMutation.isPending ? (
+                {isSending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <Send className="size-4" />
