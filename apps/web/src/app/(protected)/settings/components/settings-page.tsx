@@ -6,6 +6,13 @@ import { Brain, CheckCircle2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/qa/badge'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
 import { Label } from '@Intelligent-QA-Assistant/ui/components/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@Intelligent-QA-Assistant/ui/components/select'
 import useSettingsPageService from '../service'
 import { fadeUp, providerBadge } from '../utils'
 
@@ -103,22 +110,25 @@ export default function QaSettingsPage() {
         <div className="mt-6 space-y-5">
           <div className="space-y-2">
             <Label htmlFor="selected-model">Selected model</Label>
-            <select
-              id="selected-model"
-              value={selectedModelId}
-              onChange={(event) => setSelectedModelId(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-border/70 bg-secondary/20 px-4 text-sm"
-            >
-              {modelsQuery.data?.options.map((option) => (
-                <option
-                  key={option.id}
-                  value={option.id}
-                  disabled={option.status !== 'connected'}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedModelId} onValueChange={setSelectedModelId}>
+              <SelectTrigger
+                id="selected-model"
+                className="h-12 w-full rounded-[1.25rem] border-border/70 bg-secondary/20 shadow-none"
+              >
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {modelsQuery.data?.options.map((option) => (
+                  <SelectItem
+                    key={option.id}
+                    value={option.id}
+                    disabled={option.status !== 'connected'}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="rounded-[1.5rem] border border-border/70 bg-secondary/20 px-4 py-3 text-sm text-muted-foreground">

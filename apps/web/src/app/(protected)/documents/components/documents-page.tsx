@@ -9,6 +9,13 @@ import { EmptyState } from '@/components/qa/empty-state'
 import { UploadDropzone } from '@/components/qa/upload-dropzone'
 import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@Intelligent-QA-Assistant/ui/components/select'
 import useDocumentsPageService from '../service'
 import { fadeUp, statusOptions, statusVariant, typeOptions } from '../utils'
 import DocumentDetailSheet from './document-detail-sheet'
@@ -68,28 +75,36 @@ export default function QaDocumentsPage() {
               className="h-12 rounded-full border-border/70 bg-secondary/20 pl-11"
             />
           </label>
-          <select
+          <Select
             value={status}
-            onChange={(event) => setStatus(event.target.value as typeof status)}
-            className="h-12 rounded-full border border-border/70 bg-secondary/20 px-4 text-sm"
+            onValueChange={(value) => setStatus(value as typeof status)}
           >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger className="h-12 rounded-full border-border/70 bg-secondary/20 shadow-none">
+              <SelectValue placeholder="All status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={type}
-            onChange={(event) => setType(event.target.value as typeof type)}
-            className="h-12 rounded-full border border-border/70 bg-secondary/20 px-4 text-sm"
+            onValueChange={(value) => setType(value as typeof type)}
           >
-            {typeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-12 rounded-full border-border/70 bg-secondary/20 shadow-none">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              {typeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </motion.section>
 

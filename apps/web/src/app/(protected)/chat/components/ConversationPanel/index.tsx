@@ -13,6 +13,13 @@ import { createLocalMessage, consumeSseStream } from '../../utils'
 import type { ChatMessageLike, LocalChatMessage } from '../../types'
 import { Input } from '@Intelligent-QA-Assistant/ui/components/input'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@Intelligent-QA-Assistant/ui/components/select'
 import useConversationPanelService from './service'
 
 const suggestions = [
@@ -62,29 +69,34 @@ export default function ConversationPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={scope}
-            onChange={(event) => setScope(event.target.value)}
-            className="h-10 rounded-full border border-border/70 bg-secondary/20 px-4 text-sm"
-          >
-            <option value="all">All documents</option>
-            {documents.data?.map((document) => (
-              <option key={document.id} value={document.id}>
-                {document.name}
-              </option>
-            ))}
-          </select>
-          <select
+          <Select value={scope} onValueChange={setScope}>
+            <SelectTrigger className="h-10 w-[20rem] max-w-[32vw] rounded-full border-cyan-500/25 bg-black/75 shadow-none">
+              <SelectValue placeholder="All documents" />
+            </SelectTrigger>
+            <SelectContent className="min-w-[20rem] max-w-[28rem]">
+              <SelectItem value="all">All documents</SelectItem>
+              {documents.data?.map((document) => (
+                <SelectItem key={document.id} value={document.id}>
+                  {document.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={responseLength}
-            onChange={(event) =>
-              setResponseLength(event.target.value as typeof responseLength)
+            onValueChange={(value) =>
+              setResponseLength(value as typeof responseLength)
             }
-            className="h-10 rounded-full border border-border/70 bg-secondary/20 px-4 text-sm"
           >
-            <option value="concise">Concise</option>
-            <option value="standard">Standard</option>
-            <option value="detailed">Detailed</option>
-          </select>
+            <SelectTrigger className="h-10 rounded-full border-cyan-500/25 bg-black/75 shadow-none">
+              <SelectValue placeholder="Standard" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="concise">Concise</SelectItem>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="detailed">Detailed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
