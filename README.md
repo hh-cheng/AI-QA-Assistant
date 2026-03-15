@@ -73,6 +73,8 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 ### 4. 启动基础设施
 
+先确认 Docker Desktop 已启动，或者本机已经有可用的 Docker daemon 在运行。
+
 ```bash
 pnpm db:start
 ```
@@ -82,6 +84,12 @@ pnpm db:start
 - PostgreSQL：`localhost:5432`
 - MinIO S3 API：`localhost:9000`
 - MinIO Console：`http://localhost:9001`
+
+如果这里执行失败，优先检查：
+
+- Docker Desktop 是否已经启动
+- `docker` 和 `docker compose` 命令是否可用
+- 5432、9000、9001 端口是否被占用
 
 ### 5. 推送数据库 Schema
 

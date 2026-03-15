@@ -52,6 +52,8 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 项目自带 PostgreSQL 和 MinIO 的 Docker Compose 配置。
 
+执行下面命令前，请先确认 Docker Desktop 已经启动，或者本机已经有可用的 Docker daemon 在运行。
+
 启动容器：
 
 ```bash
@@ -63,6 +65,12 @@ pnpm db:start
 - PostgreSQL：`5432`
 - MinIO S3 API：`9000`
 - MinIO Console：`9001`
+
+如果 `pnpm db:start` 失败，优先检查：
+
+- Docker Desktop 是否已启动
+- `docker` / `docker compose` 是否可用
+- 5432、9000、9001 端口是否已被其他进程占用
 
 然后推送数据库 Schema：
 
