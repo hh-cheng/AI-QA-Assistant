@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import useSettingsPageService from './service'
 
 const invalidateQueries = vi.fn()
-const getModelsQueryOptions = vi.fn(() => ({ queryKey: ['models'] }))
-const updateModelMutationOptions = vi.fn(() => ({
+const getModelsQueryOptions = vi.fn((..._: any[]) => ({ queryKey: ['models'] }))
+const updateModelMutationOptions = vi.fn((..._: any[]) => ({
   mutationKey: ['update-model'],
 }))
 const useQuery = vi.fn()
@@ -13,28 +13,28 @@ const useMutation = vi.fn()
 const toastSuccess = vi.fn()
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: (...args: unknown[]) => useQuery(...args),
-  useMutation: (...args: unknown[]) => useMutation(...args),
+  useQuery: (...args: any[]) => useQuery(...args),
+  useMutation: (...args: any[]) => useMutation(...args),
 }))
 
 vi.mock('sonner', () => ({
   toast: {
-    success: (...args: unknown[]) => toastSuccess(...args),
+    success: (...args: any[]) => toastSuccess(...args),
   },
 }))
 
 vi.mock('@/utils/trpc', () => ({
   queryClient: {
-    invalidateQueries: (...args: unknown[]) => invalidateQueries(...args),
+    invalidateQueries: (...args: any[]) => invalidateQueries(...args),
   },
   trpc: {
     qa: {
       settings: {
         getModels: {
-          queryOptions: (...args: unknown[]) => getModelsQueryOptions(...args),
+          queryOptions: (...args: any[]) => getModelsQueryOptions(...args),
         },
         updateModel: {
-          mutationOptions: (...args: unknown[]) =>
+          mutationOptions: (...args: any[]) =>
             updateModelMutationOptions(...args),
         },
       },

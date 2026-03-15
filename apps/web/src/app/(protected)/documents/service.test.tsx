@@ -5,8 +5,10 @@ import useDocumentsPageService from './service'
 
 const invalidateQueries = vi.fn()
 const setQueryData = vi.fn()
-const listQueryOptions = vi.fn((filters) => ({ filters }))
-const deleteMutationOptions = vi.fn(() => ({ mutationKey: ['delete-doc'] }))
+const listQueryOptions = vi.fn((...args: any[]) => ({ filters: args[0] }))
+const deleteMutationOptions = vi.fn((..._: any[]) => ({
+  mutationKey: ['delete-doc'],
+}))
 const useQuery = vi.fn()
 const useMutation = vi.fn()
 const toastSuccess = vi.fn()
@@ -33,11 +35,10 @@ vi.mock('@/utils/trpc', () => ({
     qa: {
       documents: {
         list: {
-          queryOptions: (...args: unknown[]) => listQueryOptions(...args),
+          queryOptions: (...args: any[]) => listQueryOptions(...args),
         },
         delete: {
-          mutationOptions: (...args: unknown[]) =>
-            deleteMutationOptions(...args),
+          mutationOptions: (...args: any[]) => deleteMutationOptions(...args),
         },
       },
     },
