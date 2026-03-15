@@ -47,7 +47,10 @@ function createDispatcher() {
   return new EnvHttpProxyAgent()
 }
 
-export function createOpenAIClient(input: { apiKey: string }) {
+export function createOpenAICompatibleClient(input: {
+  apiKey: string
+  baseURL?: string
+}) {
   const dispatcher = createDispatcher()
   const fetchWithDispatcher: typeof fetch = (url, init) =>
     undiciFetch(
@@ -60,8 +63,13 @@ export function createOpenAIClient(input: { apiKey: string }) {
 
   return new OpenAI({
     apiKey: input.apiKey,
+    baseURL: input.baseURL,
     timeout: OPENAI_TIMEOUT_MS,
     maxRetries: 0,
     fetch: fetchWithDispatcher,
   })
+}
+
+export function createOpenAIClient(input: { apiKey: string }) {
+  return createOpenAICompatibleClient(input)
 }

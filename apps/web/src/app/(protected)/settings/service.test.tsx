@@ -49,7 +49,19 @@ describe('useSettingsPageService', () => {
     useQuery.mockReturnValue({
       data: {
         selectedModelId: 'openai:gpt-4.1',
-        options: [],
+        options: [
+          {
+            id: 'openai:gpt-4.1',
+            provider: 'openai',
+            model: 'gpt-4.1',
+            label: 'OpenAI · gpt-4.1',
+            status: 'connected',
+            capabilities: {
+              streaming: true,
+              embeddings: true,
+            },
+          },
+        ],
       },
     })
     useMutation.mockReturnValue({
@@ -80,7 +92,7 @@ describe('useSettingsPageService', () => {
     })
 
     act(() => {
-      result.current.setSelectedModelId('anthropic:claude-3-5-sonnet-latest')
+      result.current.setSelectedModelId('deepseek:deepseek-chat')
     })
 
     await act(async () => {
@@ -88,7 +100,7 @@ describe('useSettingsPageService', () => {
     })
 
     expect(mutateAsync).toHaveBeenCalledWith({
-      modelId: 'anthropic:claude-3-5-sonnet-latest',
+      modelId: 'deepseek:deepseek-chat',
     })
     expect(toastSuccess).toHaveBeenCalledWith('Model preference updated')
     expect(invalidateQueries).toHaveBeenCalled()

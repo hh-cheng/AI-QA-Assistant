@@ -1,5 +1,9 @@
 import { db } from '@Intelligent-QA-Assistant/db'
 import {
+  createDeepSeekChatProvider,
+  createModelRegistry,
+  createOpenAIChatProvider,
+  createOpenAIEmbeddingProvider,
   createOpenAIService,
   runAnswerQuestionWorkflow,
   runDocumentIngestionWorkflow,
@@ -12,7 +16,6 @@ import {
 import { env } from '@Intelligent-QA-Assistant/env/server'
 import { and, count, eq, gte, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
-import type { RetrievedChunk } from '@Intelligent-QA-Assistant/ai'
 
 import type {
   ChatMessage,
@@ -24,11 +27,7 @@ import type {
   QaOverview,
   UserModelSettings,
 } from './qa'
-import {
-  getConfiguredModelOptions,
-  getDefaultModelEntry,
-  requireSupportedModel,
-} from './qa-models'
+import { getConfiguredModelOptions, getDefaultModelEntry } from './qa-models'
 import { chunkRetriever, dedupeSources } from './qa/repositories/chunks'
 import {
   conversationRepository,
@@ -85,6 +84,19 @@ const openAIService = createOpenAIService({
   apiKey: env.OPENAI_API_KEY,
   embeddingModel: EMBEDDING_MODEL,
   embeddingDimensions: EMBEDDING_DIMENSIONS,
+})
+const embeddingProvider = createOpenAIEmbeddingProvider({
+  service: openAIService,
+})
+const chatModelRegistry = createModelRegistry({
+  providers: [
+    createOpenAIChatProvider({
+      service: openAIService,
+    }),
+    createDeepSeekChatProvider({
+      apiKey: env.DEEPSEEK_API_KEY,
+    }),
+  ],
 })
 
 function createId() {
@@ -175,78 +187,6 @@ async function appendFakeAssistantAnswer(input: {
   }
 }
 
-function describeProviderHttpError(input: {
-  provider: string
-  operation: string
-  status: number
-  body: string
-}) {
-  const prefix = `${input.provider} ${input.operation} failed`
-
-  if (input.status === 401 || input.status === 403) {
-    return `${prefix}: authentication failed. Check the API key and provider permissions.`
-  }
-
-  if (input.status === 429) {
-    return `${prefix}: rate limited or quota exceeded.`
-  }
-
-  if (input.status >= 500) {
-    return `${prefix}: provider service error (${input.status}).`
-  }
-
-  const body = input.body.trim()
-  return body
-    ? `${prefix}: ${input.status} ${body}`
-    : `${prefix}: request returned status ${input.status}.`
-}
-
-async function parseJsonResponse<T>(input: {
-  provider: string
-  operation: string
-  response: Response
-}) {
-  if (!input.response.ok) {
-    const body = await input.response.text()
-    throw new Error(
-      describeProviderHttpError({
-        provider: input.provider,
-        operation: input.operation,
-        status: input.response.status,
-        body,
-      }),
-    )
-  }
-
-  try {
-    return (await input.response.json()) as T
-  } catch {
-    throw new Error(
-      `${input.provider} ${input.operation} failed: provider returned invalid JSON.`,
-    )
-  }
-}
-
-function describeFetchFailure(input: {
-  provider: string
-  operation: string
-  error: unknown
-}) {
-  const message =
-    input.error instanceof Error ? input.error.message : String(input.error)
-
-  if (
-    message.includes('fetch failed') ||
-    message.includes('ECONNREFUSED') ||
-    message.includes('ENOTFOUND') ||
-    message.includes('ETIMEDOUT')
-  ) {
-    return `${input.provider} ${input.operation} failed: network request could not reach the provider API.`
-  }
-
-  return `${input.provider} ${input.operation} failed: ${message}`
-}
-
 function toDocumentSummary(
   row: typeof qaDocuments.$inferSelect,
 ): DocumentSummary {
@@ -295,82 +235,6 @@ export type StreamMessageResult = {
   message: ChatMessage
 }
 
-async function createNonOpenAIAnswer(input: {
-  modelId: string
-  question: string
-  responseLength: 'concise' | 'standard' | 'detailed'
-  chunks: RetrievedChunk[]
-}) {
-  const model = requireSupportedModel(input.modelId)
-  const { systemPrompt, userPrompt } = buildGroundedAnswerPrompt({
-    question: input.question,
-    responseLength: input.responseLength,
-    chunks: input.chunks,
-  })
-
-  if (model.provider === 'anthropic') {
-    if (!env.ANTHROPIC_API_KEY) {
-      throw new Error('Anthropic API key is not configured')
-    }
-
-    let response: Response
-    try {
-      response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: model.model,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: userPrompt,
-            },
-          ],
-        }),
-      })
-    } catch (error) {
-      throw new Error(
-        describeFetchFailure({
-          provider: 'Anthropic',
-          operation: 'message request',
-          error,
-        }),
-      )
-    }
-
-    const json = await parseJsonResponse<{
-      content?: Array<{ type?: string; text?: string }>
-      usage?: { input_tokens?: number; output_tokens?: number }
-    }>({
-      provider: 'Anthropic',
-      operation: 'message request',
-      response,
-    })
-
-    const content = json.content
-      ?.filter((item) => item.type === 'text' && item.text)
-      .map((item) => item.text)
-      .join('\n')
-      .trim()
-
-    return {
-      content: content || 'No answer returned.',
-      tokenCount:
-        (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0) ||
-        undefined,
-      model: model.model,
-    }
-  }
-
-  throw new Error(`Unsupported provider: ${model.provider}`)
-}
-
 async function getSelectedModelIdForUser(userId: string) {
   return userModelPreferencesRepository.getSelectedModelId(userId)
 }
@@ -378,11 +242,17 @@ async function getSelectedModelIdForUser(userId: string) {
 export async function getSelectedChatModel(input: { userId: string }) {
   const selectedModelId = await getSelectedModelIdForUser(input.userId)
   const [provider, model] = selectedModelId.split(':')
+  const resolvedModel = chatModelRegistry.getModel(selectedModelId)
 
   return {
     selectedModelId,
     provider: provider ?? '',
     model: model ?? '',
+    capabilities: resolvedModel?.capabilities ?? {
+      streaming: false,
+      embeddings: false,
+    },
+    status: resolvedModel?.status ?? 'not_configured',
   }
 }
 
@@ -473,7 +343,7 @@ async function processIngestionJob(jobId: string) {
       },
       parser: documentParser,
       chunker: chunkingService,
-      openAI: openAIService,
+      embeddingProvider,
     },
   })
 }
@@ -658,10 +528,10 @@ export async function sendMessage(input: {
       conversations: conversationRepository,
       chunkRetriever,
       modelPreferences: userModelPreferencesRepository,
-      openAI: openAIService,
+      embeddingProvider,
+      modelRegistry: chatModelRegistry,
       buildPrompt: buildGroundedAnswerPrompt,
       dedupeSources,
-      generateNonOpenAIAnswer: createNonOpenAIAnswer,
     },
   })
 
@@ -731,13 +601,13 @@ export async function streamMessage(input: {
 
   const selectedModel = await getSelectedChatModel({ userId: input.userId })
 
-  if (selectedModel.provider !== 'openai') {
-    throw new Error('Streaming is only available for OpenAI models')
+  if (!selectedModel.capabilities.streaming) {
+    throw new Error('Streaming is not available for the selected model')
   }
 
-  if (!selectedModel.model) {
-    throw new Error('Selected OpenAI model is not configured')
-  }
+  const resolvedModel = chatModelRegistry.requireModel(
+    selectedModel.selectedModelId,
+  )
 
   const startedAt = Date.now()
 
@@ -747,7 +617,7 @@ export async function streamMessage(input: {
     content: input.content,
   })
 
-  const [questionEmbedding] = await openAIService.createEmbeddings({
+  const [questionEmbedding] = await embeddingProvider.createEmbeddings({
     texts: [input.content],
   })
 
@@ -773,8 +643,12 @@ export async function streamMessage(input: {
     conversationId: input.conversationId,
   })
 
-  const answer = await openAIService.streamGroundedAnswer({
-    model: selectedModel.model,
+  if (!resolvedModel.chatProvider.streamGroundedAnswer) {
+    throw new Error('Streaming is not available for the selected model')
+  }
+
+  const answer = await resolvedModel.chatProvider.streamGroundedAnswer({
+    model: resolvedModel.model,
     systemPrompt: prompt.systemPrompt,
     userPrompt: prompt.userPrompt,
     signal: input.signal,

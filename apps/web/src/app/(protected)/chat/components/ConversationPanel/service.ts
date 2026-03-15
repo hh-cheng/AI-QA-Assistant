@@ -39,8 +39,11 @@ export default function useConversationPanelService(conversationId: string) {
   )
   const models = useQuery(trpc.qa.settings.getModels.queryOptions())
   const sendMutation = useMutation(trpc.qa.chat.sendMessage.mutationOptions())
+  const selectedModelOption = models.data?.options.find(
+    (option) => option.id === models.data?.selectedModelId,
+  )
   const canStreamResponses =
-    models.data?.selectedModelId.startsWith('openai:') ?? false
+    selectedModelOption?.capabilities.streaming ?? false
 
   const displayMessages = [
     ...(conversation.data?.messages ?? []),

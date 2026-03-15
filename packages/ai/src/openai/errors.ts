@@ -8,7 +8,12 @@ function describeCause(cause: unknown) {
   return typeof cause === 'string' ? cause : undefined
 }
 
-export function describeOpenAIError(error: unknown, operation: string) {
+export function describeProviderError(input: {
+  provider: string
+  host: string
+  operation: string
+  error: unknown
+}) {
   const proxyDetails =
     process.env.HTTPS_PROXY ??
     process.env.https_proxy ??
@@ -17,27 +22,40 @@ export function describeOpenAIError(error: unknown, operation: string) {
     process.env.ALL_PROXY ??
     process.env.all_proxy
 
-  if (error instanceof Error) {
-    const cause = 'cause' in error ? describeCause(error.cause) : undefined
+  if (input.error instanceof Error) {
+    const cause =
+      'cause' in input.error ? describeCause(input.error.cause) : undefined
 
-    if (error.message === 'Connection error.' || cause?.includes('ENOTFOUND')) {
+    if (
+      input.error.message === 'Connection error.' ||
+      cause?.includes('ENOTFOUND')
+    ) {
       return proxyDetails
-        ? `OpenAI ${operation} failed: network connection to api.openai.com could not be established while using proxy ${proxyDetails}. ${cause ?? error.message}`
-        : `OpenAI ${operation} failed: network connection to api.openai.com could not be established. ${cause ?? error.message}`
+        ? `${input.provider} ${input.operation} failed: network connection to ${input.host} could not be established while using proxy ${proxyDetails}. ${cause ?? input.error.message}`
+        : `${input.provider} ${input.operation} failed: network connection to ${input.host} could not be established. ${cause ?? input.error.message}`
     }
 
-    if (error.message === 'Request timed out.') {
+    if (input.error.message === 'Request timed out.') {
       return proxyDetails
-        ? `OpenAI ${operation} failed: request timed out after 30000ms while using proxy ${proxyDetails}. This indicates the proxy path accepted the request but did not complete the upstream call to api.openai.com in time.`
-        : `OpenAI ${operation} failed: request timed out after 30000ms.`
+        ? `${input.provider} ${input.operation} failed: request timed out after 30000ms while using proxy ${proxyDetails}. This indicates the proxy path accepted the request but did not complete the upstream call to ${input.host} in time.`
+        : `${input.provider} ${input.operation} failed: request timed out after 30000ms.`
     }
 
-    if (error.message) {
+    if (input.error.message) {
       return cause
-        ? `OpenAI ${operation} failed: ${error.message} (${cause})`
-        : `OpenAI ${operation} failed: ${error.message}`
+        ? `${input.provider} ${input.operation} failed: ${input.error.message} (${cause})`
+        : `${input.provider} ${input.operation} failed: ${input.error.message}`
     }
   }
 
-  return `OpenAI ${operation} failed: ${String(error)}`
+  return `${input.provider} ${input.operation} failed: ${String(input.error)}`
+}
+
+export function describeOpenAIError(error: unknown, operation: string) {
+  return describeProviderError({
+    provider: 'OpenAI',
+    host: 'api.openai.com',
+    operation,
+    error,
+  })
 }

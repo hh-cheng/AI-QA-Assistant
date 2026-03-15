@@ -12,6 +12,17 @@ function titleCase(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+function formatProviderLabel(provider: string) {
+  switch (provider) {
+    case 'openai':
+      return 'OpenAI'
+    case 'deepseek':
+      return 'DeepSeek'
+    default:
+      return titleCase(provider)
+  }
+}
+
 function parseModel(raw: string): ParsedModel {
   const [provider, ...modelParts] = raw.split(':')
   const model = modelParts.join(':').trim()
@@ -36,23 +47,48 @@ export function getDefaultModelEntry() {
   return parseModel(env.QA_DEFAULT_MODEL)
 }
 
-export function getConfiguredModelOptions(): ModelOption[] {
-  return getAllowedModelEntries().map((entry) => {
-    const enabled =
-      entry.provider === 'openai'
-        ? Boolean(env.OPENAI_API_KEY)
-        : entry.provider === 'anthropic'
-          ? Boolean(env.ANTHROPIC_API_KEY)
-          : false
+function getProviderCapabilities(provider: string) {
+  switch (provider) {
+    case 'openai':
+      return {
+        streaming: true,
+        embeddings: true,
+      }
+    case 'deepseek':
+      return {
+        streaming: true,
+        embeddings: false,
+      }
+    default:
+      return {
+        streaming: false,
+        embeddings: false,
+      }
+  }
+}
 
-    return {
-      id: entry.id,
-      provider: entry.provider,
-      model: entry.model,
-      label: `${titleCase(entry.provider)} · ${entry.model}`,
-      status: enabled ? 'connected' : 'not_configured',
-    }
-  })
+function isProviderConfigured(provider: string) {
+  switch (provider) {
+    case 'openai':
+      return Boolean(env.OPENAI_API_KEY)
+    case 'deepseek':
+      return Boolean(env.DEEPSEEK_API_KEY)
+    default:
+      return false
+  }
+}
+
+export function getConfiguredModelOptions(): ModelOption[] {
+  return getAllowedModelEntries().map((entry) => ({
+    id: entry.id,
+    provider: entry.provider,
+    model: entry.model,
+    label: `${formatProviderLabel(entry.provider)} · ${entry.model}`,
+    status: isProviderConfigured(entry.provider)
+      ? 'connected'
+      : 'not_configured',
+    capabilities: getProviderCapabilities(entry.provider),
+  }))
 }
 
 export function requireSupportedModel(modelId: string) {

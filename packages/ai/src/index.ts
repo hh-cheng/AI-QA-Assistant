@@ -59,6 +59,14 @@ export type OpenAIService = {
   }>
 }
 
+export type {
+  ChatProvider,
+  EmbeddingProvider,
+  GroundedAnswerResult,
+  ResolvedModel,
+} from './providers'
+export type { ModelRegistry } from './registry'
+
 export type DocumentParser = {
   extractText(input: {
     fileType: 'TXT' | 'MD' | 'PDF' | 'DOCX'
@@ -217,7 +225,13 @@ export type UserModelPreferencesRepository = {
 
 export { createMastra } from './mastra'
 export { createAnswerAgent } from './agents/answer-agent'
+export { createModelRegistry } from './registry'
+export {
+  createOpenAIChatProvider,
+  createOpenAIEmbeddingProvider,
+} from './openai/provider'
 export { createOpenAIService } from './openai/service'
+export { createDeepSeekChatProvider } from './deepseek/provider'
 export {
   createAnswerQuestionWorkflow,
   runAnswerQuestionWorkflow,

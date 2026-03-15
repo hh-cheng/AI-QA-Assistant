@@ -7,11 +7,11 @@ import type {
   AnswerQuestionResult,
   ChunkRetriever,
   ConversationRepository,
-  OpenAIService,
+  EmbeddingProvider,
+  ModelRegistry,
   RetrievedChunk,
   UserModelPreferencesRepository,
 } from '../index'
-import { createAnswerAgent } from '../agents/answer-agent'
 
 const inputSchema = z.object({
   conversationId: z.string(),
@@ -70,7 +70,8 @@ export type AnswerQuestionWorkflowDeps = {
   conversations: ConversationRepository
   chunkRetriever: ChunkRetriever
   modelPreferences: UserModelPreferencesRepository
-  openAI: OpenAIService
+  embeddingProvider: EmbeddingProvider
+  modelRegistry: ModelRegistry
   buildPrompt(input: {
     question: string
     responseLength: 'concise' | 'standard' | 'detailed'
@@ -79,19 +80,9 @@ export type AnswerQuestionWorkflowDeps = {
   dedupeSources(
     chunks: RetrievedChunk[],
   ): Array<{ name: string; page?: number }>
-  generateNonOpenAIAnswer?(input: {
-    modelId: string
-    question: string
-    responseLength: 'concise' | 'standard' | 'detailed'
-    chunks: RetrievedChunk[]
-  }): Promise<AnswerGenerationResult>
 }
 
 export function createAnswerQuestionWorkflow(deps: AnswerQuestionWorkflowDeps) {
-  const answerAgent = createAnswerAgent({
-    openAIService: deps.openAI,
-  })
-
   const loadStep = createStep({
     id: 'load-conversation-context',
     inputSchema,
@@ -132,9 +123,11 @@ export function createAnswerQuestionWorkflow(deps: AnswerQuestionWorkflowDeps) {
         content: inputData.question,
       })
 
-      const [questionEmbedding] = await deps.openAI.createEmbeddings({
-        texts: [inputData.question],
-      })
+      const [questionEmbedding] = await deps.embeddingProvider.createEmbeddings(
+        {
+          texts: [inputData.question],
+        },
+      )
       if (!questionEmbedding) {
         throw new Error(
           'OpenAI embedding request failed: response did not contain an embedding.',
@@ -162,30 +155,21 @@ export function createAnswerQuestionWorkflow(deps: AnswerQuestionWorkflowDeps) {
     inputSchema: retrievedSchema,
     outputSchema: answeredSchema,
     execute: async ({ inputData }) => {
-      const provider = inputData.selectedModelId.split(':')[0]
       const prompt = deps.buildPrompt({
         question: inputData.question,
         responseLength: inputData.responseLength,
         chunks: inputData.chunks,
       })
+      const selectedModel = deps.modelRegistry.requireModel(
+        inputData.selectedModelId,
+      )
 
-      let answer: AnswerGenerationResult
-      if (provider === 'openai') {
-        answer = await answerAgent.generate({
-          model: inputData.selectedModelId.slice('openai:'.length),
+      const answer: AnswerGenerationResult =
+        await selectedModel.chatProvider.generateGroundedAnswer({
+          model: selectedModel.model,
           systemPrompt: prompt.systemPrompt,
           userPrompt: prompt.userPrompt,
         })
-      } else if (deps.generateNonOpenAIAnswer) {
-        answer = await deps.generateNonOpenAIAnswer({
-          modelId: inputData.selectedModelId,
-          question: inputData.question,
-          responseLength: inputData.responseLength,
-          chunks: inputData.chunks,
-        })
-      } else {
-        throw new Error(`Unsupported provider: ${provider ?? 'unknown'}`)
-      }
 
       return {
         ...inputData,

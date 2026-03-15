@@ -45,12 +45,18 @@ export type ConversationDetail = ConversationSummary & {
 
 export type ProviderStatus = 'connected' | 'not_configured'
 
+export type ModelCapabilities = {
+  streaming: boolean
+  embeddings: boolean
+}
+
 export type ModelOption = {
   id: string
   provider: string
   model: string
   label: string
   status: ProviderStatus
+  capabilities: ModelCapabilities
 }
 
 export type UserModelSettings = {

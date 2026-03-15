@@ -112,10 +112,10 @@ app.post('/qa/chat/stream', async (c) => {
   }
 
   const selectedModel = await getSelectedChatModel({ userId })
-  if (selectedModel.provider !== 'openai') {
+  if (!selectedModel.capabilities.streaming) {
     return c.json(
       {
-        message: 'Streaming is only available for OpenAI models',
+        message: 'Streaming is not available for the selected model',
       },
       409,
     )

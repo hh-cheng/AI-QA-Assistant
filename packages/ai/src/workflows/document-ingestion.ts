@@ -9,8 +9,8 @@ import type {
   DocumentParser,
   DocumentRepository,
   DocumentStorage,
+  EmbeddingProvider,
   IngestionJobRepository,
-  OpenAIService,
 } from '../index'
 
 const inputSchema = z.object({
@@ -61,7 +61,7 @@ export type DocumentIngestionWorkflowDeps = {
   storage: DocumentStorage
   parser: DocumentParser
   chunker: ChunkingService
-  openAI: OpenAIService
+  embeddingProvider: EmbeddingProvider
 }
 
 export function createDocumentIngestionWorkflow(
@@ -146,7 +146,7 @@ export function createDocumentIngestionWorkflow(
     inputSchema: parsedSchema,
     outputSchema: persistedSchema,
     execute: async ({ inputData }) => {
-      const embeddings = await deps.openAI.createEmbeddings({
+      const embeddings = await deps.embeddingProvider.createEmbeddings({
         texts: inputData.chunks.map((chunk) => chunk.content),
       })
 

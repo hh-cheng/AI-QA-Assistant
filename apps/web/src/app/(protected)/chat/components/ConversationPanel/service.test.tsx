@@ -89,6 +89,19 @@ describe('useConversationPanelService', () => {
       return {
         data: {
           selectedModelId: 'openai:gpt-4.1',
+          options: [
+            {
+              id: 'openai:gpt-4.1',
+              provider: 'openai',
+              model: 'gpt-4.1',
+              label: 'OpenAI · gpt-4.1',
+              status: 'connected',
+              capabilities: {
+                streaming: true,
+                embeddings: true,
+              },
+            },
+          ],
         },
       }
     })
@@ -133,5 +146,73 @@ describe('useConversationPanelService', () => {
     })
     expect(setQueryData).toHaveBeenCalled()
     expect(invalidateQueries).toHaveBeenCalled()
+  })
+
+  it('uses the mutation API directly when the selected model does not support streaming', async () => {
+    useQuery.mockImplementation((input: { queryKey?: string[] }) => {
+      if (input.queryKey?.[0] === 'conversation') {
+        return {
+          data: {
+            id: 'conv-1',
+            title: 'New Chat',
+            updatedAt: new Date().toISOString(),
+            messages: [],
+          },
+        }
+      }
+
+      if (input.queryKey?.[0] === 'documents') {
+        return {
+          data: [{ id: 'doc-1', name: 'Policy.pdf' }],
+        }
+      }
+
+      return {
+        data: {
+          selectedModelId: 'deepseek:deepseek-chat',
+          options: [
+            {
+              id: 'deepseek:deepseek-chat',
+              provider: 'deepseek',
+              model: 'deepseek-chat',
+              label: 'DeepSeek · deepseek-chat',
+              status: 'connected',
+              capabilities: {
+                streaming: false,
+                embeddings: false,
+              },
+            },
+          ],
+        },
+      }
+    })
+
+    const mutateAsync = vi.fn().mockResolvedValue({
+      id: 'conv-1',
+      title: 'New Chat',
+      updatedAt: new Date().toISOString(),
+      messages: [],
+    })
+    useMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    })
+
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { result } = renderHook(() => useConversationPanelService('conv-1'))
+
+    await act(async () => {
+      await result.current.send('hello there')
+    })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mutateAsync).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      content: 'hello there',
+      scope: 'all',
+      responseLength: 'standard',
+    })
   })
 })

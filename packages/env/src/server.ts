@@ -18,6 +18,7 @@ export const env = createEnv({
       .default('false')
       .transform((value) => value === 'true'),
     OPENAI_API_KEY: z.string().min(1),
+    DEEPSEEK_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     QA_DEFAULT_MODEL: z.string().min(1),
     QA_ALLOWED_MODELS: z.string().min(1),
