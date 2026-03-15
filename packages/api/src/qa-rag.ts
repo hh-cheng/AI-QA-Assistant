@@ -52,6 +52,7 @@ import {
   chunkingService,
   documentParser,
   parseDocumentType,
+  summarizeText,
 } from './qa/services/document-processing'
 import { buildGroundedAnswerPrompt } from './qa/services/prompt-builder'
 import {
@@ -71,6 +72,14 @@ const EMBEDDING_MODEL = 'text-embedding-3-small'
 const EMBEDDING_DIMENSIONS = 1536
 
 let ingestionLoopRunning = false
+
+function isFakeAiEnabled() {
+  return env.QA_TEST_MODE || env.QA_FAKE_AI
+}
+
+function isFakeStorageEnabled() {
+  return env.QA_TEST_MODE || env.QA_FAKE_STORAGE
+}
 
 const openAIService = createOpenAIService({
   apiKey: env.OPENAI_API_KEY,
@@ -92,6 +101,78 @@ function formatSizeLabel(sizeBytes: number) {
 function buildStorageKey(userId: string, documentId: string, fileName: string) {
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
   return `user/${userId}/documents/${documentId}/${safeName}`
+}
+
+function buildFakeAnswer(input: {
+  content: string
+  responseLength: 'concise' | 'standard' | 'detailed'
+}) {
+  const prefix =
+    input.responseLength === 'concise'
+      ? 'Concise test answer'
+      : input.responseLength === 'detailed'
+        ? 'Detailed test answer'
+        : 'Standard test answer'
+
+  return `${prefix}: ${input.content}`
+}
+
+function splitIntoChunks(content: string, chunkSize = 18) {
+  const chunks: string[] = []
+
+  for (let index = 0; index < content.length; index += chunkSize) {
+    chunks.push(content.slice(index, index + chunkSize))
+  }
+
+  return chunks
+}
+
+async function appendFakeAssistantAnswer(input: {
+  userId: string
+  conversation: NonNullable<Awaited<ReturnType<typeof getConversationRow>>>
+  content: string
+  scope: string
+  responseLength: 'concise' | 'standard' | 'detailed'
+}) {
+  const selectedModel = await getSelectedChatModel({ userId: input.userId })
+  const modelName = selectedModel.model || getDefaultModelEntry().model
+  const answer = buildFakeAnswer({
+    content: input.content,
+    responseLength: input.responseLength,
+  })
+  const now = new Date()
+
+  await conversationRepository.appendUserMessage({
+    conversationId: input.conversation.id,
+    userId: input.userId,
+    content: input.content,
+  })
+
+  await conversationRepository.appendAssistantMessage({
+    conversationId: input.conversation.id,
+    userId: input.userId,
+    content: answer,
+    model: modelName,
+    responseTimeMs: 24,
+    tokenCount: Math.max(1, Math.ceil(answer.length / 4)),
+    sources: [],
+  })
+
+  await conversationRepository.updateConversationAfterAnswer({
+    conversationId: input.conversation.id,
+    title:
+      input.conversation.title === 'New Chat'
+        ? input.content.slice(0, 40)
+        : input.conversation.title,
+    selectedScope: input.scope === 'all' ? null : [input.scope],
+    selectedModel: modelName,
+    updatedAt: now,
+  })
+
+  return {
+    answer,
+    modelName,
+  }
 }
 
 function describeProviderHttpError(input: {
@@ -323,12 +404,15 @@ export async function saveUploadedDocuments(input: {
     const body = Buffer.from(await file.arrayBuffer())
     const storageKey = buildStorageKey(input.userId, documentId, file.name)
     const checksum = createHash('sha256').update(body).digest('hex')
+    const fakeStorage = isFakeStorageEnabled()
 
-    await storeDocumentObject({
-      storageKey,
-      body,
-      contentType: file.type || 'application/octet-stream',
-    })
+    if (!fakeStorage) {
+      await storeDocumentObject({
+        storageKey,
+        body,
+        contentType: file.type || 'application/octet-stream',
+      })
+    }
 
     await db.insert(qaDocuments).values({
       id: documentId,
@@ -339,18 +423,23 @@ export async function saveUploadedDocuments(input: {
       fileSizeBytes: file.size,
       storageBucket: env.OBJECT_STORAGE_BUCKET,
       storageKey,
-      status: 'pending',
+      status: fakeStorage ? 'ready' : 'pending',
+      summary: fakeStorage ? summarizeText(body.toString('utf-8')) : null,
+      chunkCount: fakeStorage ? 1 : 0,
       sourceChecksum: checksum,
+      processedAt: fakeStorage ? new Date() : null,
       updatedAt: new Date(),
     })
 
-    await db.insert(qaIngestionJobs).values({
-      id: createId(),
-      documentId,
-      userId: input.userId,
-      status: 'pending',
-      updatedAt: new Date(),
-    })
+    if (!fakeStorage) {
+      await db.insert(qaIngestionJobs).values({
+        id: createId(),
+        documentId,
+        userId: input.userId,
+        status: 'pending',
+        updatedAt: new Date(),
+      })
+    }
 
     const row = await db.query.qaDocuments.findFirst({
       where: (table, { eq }) => eq(table.id, documentId),
@@ -390,6 +479,7 @@ async function processIngestionJob(jobId: string) {
 }
 
 export async function processPendingIngestionJobs() {
+  if (isFakeStorageEnabled()) return
   if (ingestionLoopRunning) return
   ingestionLoopRunning = true
 
@@ -473,7 +563,9 @@ export async function deleteDocument(input: {
     return false
   }
 
-  await removeDocumentObject(document.storageKey)
+  if (!isFakeStorageEnabled()) {
+    await removeDocumentObject(document.storageKey)
+  }
   return true
 }
 
@@ -539,6 +631,21 @@ export async function sendMessage(input: {
     throw new Error('Conversation not found')
   }
 
+  if (isFakeAiEnabled()) {
+    await appendFakeAssistantAnswer({
+      userId: input.userId,
+      conversation,
+      content: input.content,
+      scope: input.scope,
+      responseLength: input.responseLength,
+    })
+
+    return getConversation({
+      userId: input.userId,
+      conversationId: conversation.id,
+    })
+  }
+
   await runAnswerQuestionWorkflow({
     input: {
       conversationId: conversation.id,
@@ -581,6 +688,45 @@ export async function streamMessage(input: {
 
   if (!conversation) {
     throw new Error('Conversation not found')
+  }
+
+  if (isFakeAiEnabled()) {
+    input.onStart?.({
+      conversationId: input.conversationId,
+    })
+
+    const { answer, modelName } = await appendFakeAssistantAnswer({
+      userId: input.userId,
+      conversation,
+      content: input.content,
+      scope: input.scope,
+      responseLength: input.responseLength,
+    })
+
+    for (const chunk of splitIntoChunks(answer)) {
+      if (input.signal?.aborted) {
+        throw new Error('Streaming request aborted')
+      }
+      input.onDelta(chunk)
+    }
+
+    const updatedConversation = await getConversation({
+      userId: input.userId,
+      conversationId: input.conversationId,
+    })
+    const assistantMessage = updatedConversation?.messages.at(-1)
+
+    if (!assistantMessage) {
+      throw new Error('Test message generation failed')
+    }
+
+    return {
+      conversationId: input.conversationId,
+      message: {
+        ...assistantMessage,
+        model: modelName,
+      },
+    }
   }
 
   const selectedModel = await getSelectedChatModel({ userId: input.userId })

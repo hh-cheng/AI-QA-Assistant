@@ -195,10 +195,15 @@ app.get('/', (c) => {
 
 import { serve } from '@hono/node-server'
 
-void ensureObjectStorageBucket()
-setInterval(() => {
-  void processPendingIngestionJobs()
-}, 5_000)
+if (!env.QA_TEST_MODE && !env.QA_FAKE_STORAGE) {
+  void ensureObjectStorageBucket()
+}
+
+if (!env.QA_TEST_MODE) {
+  setInterval(() => {
+    void processPendingIngestionJobs()
+  }, 5_000)
+}
 
 serve(
   {

@@ -9,7 +9,9 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "test:unit": "vitest run --project api"
+  },
   "dependencies": {
     "@Intelligent-QA-Assistant/ai": "workspace:*",
     "@Intelligent-QA-Assistant/auth": "workspace:*",

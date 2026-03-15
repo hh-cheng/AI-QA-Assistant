@@ -21,6 +21,22 @@ export const env = createEnv({
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     QA_DEFAULT_MODEL: z.string().min(1),
     QA_ALLOWED_MODELS: z.string().min(1),
+    QA_TEST_MODE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    QA_FAKE_AI: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    QA_FAKE_STORAGE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    BETTER_AUTH_SECURE_COOKIES: z
+      .enum(['true', 'false'])
+      .default(process.env.NODE_ENV === 'test' ? 'false' : 'true')
+      .transform((value) => value === 'true'),
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
