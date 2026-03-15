@@ -1,5 +1,12 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+import { authClient } from '@/lib/auth-client'
+import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
+import { Skeleton } from '@Intelligent-QA-Assistant/ui/components/skeleton'
 import { buttonVariants } from '@Intelligent-QA-Assistant/ui/components/button'
 import {
   DropdownMenu,
@@ -10,18 +17,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@Intelligent-QA-Assistant/ui/components/dropdown-menu'
-import { cn } from '@Intelligent-QA-Assistant/ui/lib/utils'
-import { Skeleton } from '@Intelligent-QA-Assistant/ui/components/skeleton'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-
-import { authClient } from '@/lib/auth-client'
 
 export default function UserMenu() {
   const router = useRouter()
+  const [isHydrated, setIsHydrated] = useState(false)
   const { data: session, isPending } = authClient.useSession()
 
-  if (isPending) {
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  if (!isHydrated || isPending) {
     return <Skeleton className="h-9 w-24" />
   }
 

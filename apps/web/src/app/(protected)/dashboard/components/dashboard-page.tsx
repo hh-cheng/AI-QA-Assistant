@@ -13,53 +13,17 @@ import {
   Upload,
 } from 'lucide-react'
 
-import { Badge } from './badge'
 import { trpc } from '@/utils/trpc'
-import { StatCard } from './stat-card'
-import { EmptyState } from './empty-state'
+import { Badge } from '@/components/qa/badge'
+import { StatCard } from '@/components/qa/stat-card'
+import { EmptyState } from '@/components/qa/empty-state'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
-
-const quickActions = [
-  {
-    href: '/documents',
-    title: 'Manage documents',
-    description: 'Upload, review, and delete indexed files',
-    icon: <ArrowRight className="size-4 text-muted-foreground" />,
-  },
-  {
-    href: '/chat',
-    title: 'Open chat',
-    description: 'Ask grounded questions over your indexed documents',
-    icon: <ArrowRight className="size-4 text-muted-foreground" />,
-  },
-  {
-    href: '/settings',
-    title: 'Choose your model',
-    description: 'Select which supported LLM answers your questions',
-    icon: <Settings className="size-4 text-muted-foreground" />,
-  },
-] as const
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (index: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: index * 0.08,
-      duration: 0.45,
-      ease: [0.32, 0.72, 0, 1] as const,
-    },
-  }),
-}
-
-function formatTimeAgo(value: string) {
-  const diff = Date.now() - new Date(value).getTime()
-  const hours = Math.max(1, Math.floor(diff / (1000 * 60 * 60)))
-  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
-  const days = Math.floor(hours / 24)
-  return `${days} day${days > 1 ? 's' : ''} ago`
-}
+import {
+  fadeUp,
+  formatTimeAgo,
+  getDocumentStatusBadgeVariant,
+  quickActions,
+} from '../utils'
 
 export default function QaDashboardPage({ userName }: { userName: string }) {
   const overview = useQuery(trpc.qa.dashboard.getOverview.queryOptions())
@@ -189,15 +153,7 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
                     </td>
                     <td className="px-4 py-3">
                       <Badge
-                        variant={
-                          doc.status === 'ready'
-                            ? 'success'
-                            : doc.status === 'processing'
-                              ? 'processing'
-                              : doc.status === 'failed'
-                                ? 'destructive'
-                                : 'secondary'
-                        }
+                        variant={getDocumentStatusBadgeVariant(doc.status)}
                       >
                         {doc.status}
                       </Badge>
@@ -237,7 +193,7 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
                           {action.description}
                         </p>
                       </div>
-                      {action.icon}
+                      <QuickActionIcon iconName={action.iconName} />
                     </div>
                   </Link>
                 </motion.div>
@@ -264,4 +220,17 @@ export default function QaDashboardPage({ userName }: { userName: string }) {
       </section>
     </motion.div>
   )
+}
+
+function QuickActionIcon({
+  iconName,
+}: {
+  iconName: (typeof quickActions)[number]['iconName']
+}) {
+  switch (iconName) {
+    case 'settings':
+      return <Settings className="size-4 text-muted-foreground" />
+    default:
+      return <ArrowRight className="size-4 text-muted-foreground" />
+  }
 }

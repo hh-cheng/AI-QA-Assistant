@@ -1,51 +1,35 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import { Brain, CheckCircle2, Loader2 } from 'lucide-react'
+
+import { Badge } from '@/components/qa/badge'
 import { Button } from '@Intelligent-QA-Assistant/ui/components/button'
 import { Label } from '@Intelligent-QA-Assistant/ui/components/label'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Brain, CheckCircle2, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
-
-import { queryClient, trpc } from '@/utils/trpc'
-
-import { Badge } from './badge'
-
-function providerBadge(status: 'connected' | 'not_configured') {
-  switch (status) {
-    case 'connected':
-      return 'success'
-    default:
-      return 'secondary'
-  }
-}
+import useSettingsPageService from '../service'
+import { fadeUp, providerBadge } from '../utils'
 
 export default function QaSettingsPage() {
-  const modelsQuery = useQuery(trpc.qa.settings.getModels.queryOptions())
-  const updateModel = useMutation(
-    trpc.qa.settings.updateModel.mutationOptions(),
-  )
-  const [selectedModelId, setSelectedModelId] = useState('')
-
-  useEffect(() => {
-    if (modelsQuery.data?.selectedModelId) {
-      setSelectedModelId(modelsQuery.data.selectedModelId)
-    }
-  }, [modelsQuery.data?.selectedModelId])
-
-  const saveModel = async () => {
-    if (!selectedModelId) return
-    await updateModel.mutateAsync({
-      modelId: selectedModelId,
-    })
-    toast.success('Model preference updated')
-    await queryClient.invalidateQueries()
-  }
+  const {
+    saveModel,
+    modelsQuery,
+    selectedModelId,
+    setSelectedModelId,
+    isSaving,
+  } = useSettingsPageService()
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-      <section className="space-y-4">
-        <div className="qa-glass-card rounded-[2rem] p-6">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]"
+    >
+      <motion.section variants={fadeUp} custom={0} className="space-y-4">
+        <motion.div
+          variants={fadeUp}
+          custom={1}
+          className="qa-glass-card rounded-[2rem] p-6"
+        >
           <div className="flex items-start gap-3">
             <div className="rounded-3xl bg-primary/10 p-3 text-primary">
               <Brain className="size-5" />
@@ -60,12 +44,14 @@ export default function QaSettingsPage() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {modelsQuery.data?.options.map((option) => (
-            <label
+          {modelsQuery.data?.options.map((option, index) => (
+            <motion.label
               key={option.id}
+              variants={fadeUp}
+              custom={index + 3}
               className="qa-glass-card-hover flex cursor-pointer gap-4 rounded-[2rem] p-5 text-left"
             >
               <input
@@ -90,12 +76,16 @@ export default function QaSettingsPage() {
                   {option.provider}
                 </p>
               </div>
-            </label>
+            </motion.label>
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="qa-glass-card rounded-[2rem] p-6">
+      <motion.section
+        variants={fadeUp}
+        custom={2}
+        className="qa-glass-card rounded-[2rem] p-6"
+      >
         <div className="flex items-start gap-3">
           <div className="rounded-3xl bg-accent/12 p-3 text-accent">
             <Brain className="size-5" />
@@ -140,9 +130,9 @@ export default function QaSettingsPage() {
             type="button"
             className="w-full rounded-full"
             onClick={() => void saveModel()}
-            disabled={updateModel.isPending || !selectedModelId}
+            disabled={isSaving || !selectedModelId}
           >
-            {updateModel.isPending ? (
+            {isSaving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <CheckCircle2 className="size-4" />
@@ -150,7 +140,7 @@ export default function QaSettingsPage() {
             Save model preference
           </Button>
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }

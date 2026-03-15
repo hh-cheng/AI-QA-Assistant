@@ -1,4 +1,4 @@
-import QaDashboardPage from '@/components/qa/dashboard-page'
+import QaDashboardPage from './components/dashboard-page'
 import { verifyQaSession } from '@/lib/qa-auth'
 
 export default async function DashboardPage() {

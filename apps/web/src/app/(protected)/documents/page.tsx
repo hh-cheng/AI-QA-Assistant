@@ -1,4 +1,4 @@
-import QaDocumentsPage from '@/components/qa/documents-page'
+import QaDocumentsPage from './components/documents-page'
 import { verifyQaSession } from '@/lib/qa-auth'
 
 export default async function DocumentsPage() {

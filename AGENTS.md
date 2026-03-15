@@ -129,6 +129,12 @@ Important: the QA experience is not fully backed by the database yet. `packages/
   - Prefer shadcn-based components and conventions first.
   - Inspect `packages/ui` first before creating new controls.
   - Keep styling aligned with the existing Tailwind v4 and shadcn setup.
+  - For protected route pages in `apps/web/src/app`, prefer route-local organization that mirrors `app/(protected)/chat`:
+    - keep `page.tsx` thin and limited to server concerns such as auth/session checks
+    - place the main client page component under the route's own `components/` directory
+    - extract a colocated `service.ts` when the page has meaningful client state, side effects, or request orchestration
+    - extract colocated `types.ts` and `utils.ts` only when they reduce complexity; do not force extra files for simple pages around 100 lines or less
+  - Avoid placing route-specific page implementations in shared folders like `apps/web/src/components/qa`; reserve shared folders for genuinely reusable primitives.
 - For backend/API changes:
   - Prefer placing shared business logic in `packages/api` rather than `apps/server`.
   - Keep `apps/server` focused on wiring, transport, and middleware.
